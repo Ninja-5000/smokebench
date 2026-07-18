@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from llm_bench.benchmarks.base import Benchmark, Sample
 

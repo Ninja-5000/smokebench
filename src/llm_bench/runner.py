@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 import time
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable
 
 from llm_bench.benchmarks.base import Benchmark, SampleResult, TaskScore
 from llm_bench.clients.base import LLMClient

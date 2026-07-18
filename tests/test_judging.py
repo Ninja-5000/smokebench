@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from llm_bench.judging import (
     grade_contains,
     grade_cosine_sim,
@@ -18,7 +16,7 @@ from llm_bench.judging import (
 
 def test_grade_exact() -> None:
     assert grade_exact("42", "42").passed
-    assert not grade_exact("42 ", "42", case_sensitive=False).passed is False  # default
+    assert grade_exact("42 ", "42", case_sensitive=False).passed is not False  # default
     assert not grade_exact("43", "42").passed
 
 

@@ -32,7 +32,7 @@ class CustomSpec:
     samples: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
-    def from_path(cls, path: str | Path) -> "CustomSpec":
+    def from_path(cls, path: str | Path) -> CustomSpec:
         text = Path(path).read_text()
         if str(path).endswith((".yaml", ".yml")):
             data = yaml.safe_load(text) or {}
@@ -45,7 +45,7 @@ class CustomSpec:
         )
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "CustomSpec":
+    def from_dict(cls, d: dict[str, Any]) -> CustomSpec:
         return cls(
             name=str(d.get("name", "custom")),
             description=str(d.get("description", "")),

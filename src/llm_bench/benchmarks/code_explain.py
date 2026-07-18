@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from llm_bench.benchmarks._io import load_json_or_jsonl
 from llm_bench.benchmarks.base import Benchmark, Sample
-from llm_bench.benchmarks.math_reason import _load_json_or_jsonl
 
 _DATA = Path(__file__).parent / "datasets" / "code_explain.jsonl"
 
@@ -20,7 +20,7 @@ class CodeExplainBenchmark(Benchmark):
     @property
     def samples(self) -> list[Sample]:
         out: list[Sample] = []
-        for d in _load_json_or_jsonl(_DATA):
+        for d in load_json_or_jsonl(_DATA):
             out.append(
                 Sample(
                     id=d["id"],

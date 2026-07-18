@@ -13,11 +13,10 @@ from textual.widgets import Button, Log, ProgressBar, Static
 
 from llm_bench.benchmarks import instantiate
 from llm_bench.clients.detect import make_client
-from llm_bench.pricing import cost_for
 from llm_bench.results.recommend import recommend
 from llm_bench.results.report import markdown_report
 from llm_bench.results.store import save_result
-from llm_bench.runner import RunResult, run_all
+from llm_bench.runner import run_all
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
 
@@ -31,7 +30,6 @@ class RunScreen(Screen):
     CSS_PATH = "../styles.tcss"
 
     def compose(self) -> ComposeResult:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
             Static("5 / 6 — Running", classes="section-title"),
             Static("", id="summary"),
@@ -154,7 +152,7 @@ class RunScreen(Screen):
 
         # Persist
         out_dir = save_result(result, out_dir="./llm_bench_results")
-        md = markdown_report(result, out_path=out_dir / "report.md")
+        markdown_report(result, out_path=out_dir / "report.md")
         log.write_line(f"Report saved to {out_dir / 'report.md'}")
 
         # Push results screen

@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Static
 
@@ -25,7 +25,6 @@ class ResultsScreen(Screen):
     CSS_PATH = "../styles.tcss"
 
     def compose(self) -> ComposeResult:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
             Static("6 / 6 — Results", classes="section-title"),
             DataTable(id="table", zebra_stripes=True, cursor_type="row"),

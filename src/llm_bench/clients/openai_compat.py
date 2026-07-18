@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 
 from llm_bench.clients._http import make_client
 from llm_bench.clients.base import (
     ChatChunk,
-    ChatMessage,
     ChatRequest,
     ChatResponse,
     LLMClient,

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
-from llm_bench.config import AppConfig, EndpointConfig, PricingConfig, save_config, load_config
+from llm_bench.config import AppConfig, EndpointConfig, load_config, save_config
 
 
 def test_save_and_load(tmp_path: Path) -> None:

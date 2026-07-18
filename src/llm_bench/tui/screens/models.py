@@ -10,7 +10,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Input, Label, Static
 
-from llm_bench.discovery import parse_manual_models
+from llm_bench.discovery import fetch_models, parse_manual_models
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
 
@@ -29,7 +29,6 @@ class ModelsScreen(Screen):
     CSS_PATH = "../styles.tcss"
 
     def compose(self) -> ComposeResult:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
             Static("2 / 6 — Models", classes="section-title"),
             Static(

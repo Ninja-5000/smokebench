@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Sequence
+from typing import Any
 
 from llm_bench.clients.base import ChatRequest, LLMClient
 from llm_bench.judging.deterministic import GradeResult
@@ -96,8 +97,8 @@ class Benchmark(ABC):
     ) -> GradeResult:
         """Dispatch to the right grader."""
         from llm_bench.judging.deterministic import (
-            grade_cosine_sim,
             grade_contains,
+            grade_cosine_sim,
             grade_exact,
             grade_json_schema,
             grade_numeric,

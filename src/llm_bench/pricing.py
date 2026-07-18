@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from llm_bench.config import PricingConfig
 from llm_bench.clients.base import TokenUsage
+from llm_bench.config import PricingConfig
 
 
 def cost_for(model_id: str, usage: TokenUsage, pricing: PricingConfig | None) -> float:

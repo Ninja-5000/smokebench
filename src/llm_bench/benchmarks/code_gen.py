@@ -25,7 +25,7 @@ class CodeGenBenchmark(Benchmark):
     @property
     def samples(self) -> list[Sample]:
         out: list[Sample] = []
-        for d in _load_json_or_jsonl(_DATA):
+        for d in load_json_or_jsonl(_DATA):
             out.append(
                 Sample(
                     id=d["id"],

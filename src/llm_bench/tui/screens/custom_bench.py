@@ -6,15 +6,14 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import Button, Input, Label, Select, Static, TextArea
+from textual.widgets import Button, Input, Label, Static, TextArea
 
 from llm_bench.benchmarks import CustomBenchmark
 from llm_bench.benchmarks.custom import CustomSpec
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
-
 
 PLACEHOLDER = """\
 # Custom benchmark: name + samples

@@ -34,7 +34,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
 
 def run(argv: list[str] | None = None) -> int:
     """Launch the TUI. Returns a process exit code."""
-    args = _parse_args(argv if argv is not None else sys.argv[1:])
+    _ = _parse_args(argv if argv is not None else sys.argv[1:])  # noqa: F841
     cfg = load_config()
     state = AppState(
         base_url=cfg.endpoint.base_url,

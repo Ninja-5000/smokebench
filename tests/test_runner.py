@@ -28,8 +28,11 @@ def _ok_response(content: str = "#### 42", prompt_tokens: int = 5, completion_to
 @pytest.mark.asyncio
 async def test_run_math_benchmark() -> None:
     with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
-        mock.post("/chat/completions").mock(return_value=_ok_response("The answer is 42\n#### 42"))
-        client_factory = lambda model: OpenAICompatClient("https://api.example.com/v1", "sk-test")
+        # All 3 samples in MathReasonBenchmark have different expected values,
+        # so mock a "match the last one" response. We verify n=3 and at least 1 pass.
+        mock.post("/chat/completions").mock(return_value=_ok_response("The answer is 72\n#### 72"))
+        def client_factory(model):  # noqa: E731
+            return OpenAICompatClient("https://api.example.com/v1", "sk-test")
         result = await run_all(
             models=["m1"],
             benchmarks=[MathReasonBenchmark(n_samples=3)],
@@ -40,7 +43,8 @@ async def test_run_math_benchmark() -> None:
     assert ("m1", "math_reasoning") in result.by_model_task
     score = result.by_model_task[("m1", "math_reasoning")]
     assert score.n == 3
-    assert score.passed >= 2  # The regex looks for "#### <num>" or a final number.
+    # At least the first sample (gsm8k_1) expects 72 — so 1 of 3 should pass.
+    assert score.passed >= 1
 
 
 @pytest.mark.asyncio
