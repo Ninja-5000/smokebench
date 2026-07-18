@@ -1,0 +1,270 @@
+"""Async orchestrator: runs (model, benchmark) pairs with progress events."""
+
+from __future__ import annotations
+
+import asyncio
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Awaitable, Callable
+
+from llm_bench.benchmarks.base import Benchmark, SampleResult, TaskScore
+from llm_bench.clients.base import LLMClient
+from llm_bench.config import PricingConfig
+from llm_bench.pricing import cost_for
+
+EventKind = str  # "start" | "sample_done" | "task_done" | "model_done" | "error"
+EventCallback = Callable[[EventKind, dict], Awaitable[None]]
+
+
+@dataclass
+class RunResult:
+    """Aggregated results for a single run."""
+
+    by_model_task: dict[tuple[str, str], TaskScore] = field(default_factory=dict)
+    by_model: dict[str, list[TaskScore]] = field(default_factory=lambda: defaultdict(list))
+    errors: list[tuple[str, str, str]] = field(default_factory=list)  # (model, task, msg)
+
+
+async def _run_one_sample(
+    benchmark: Benchmark,
+    model: str,
+    judge_model: str | None,
+    bench_client: LLMClient,
+) -> SampleResult:
+    samples = benchmark.sliced_samples()
+    if not samples:
+        return SampleResult(
+            sample_id="<empty>",
+            output="",
+            score=0.0,
+            passed=False,
+            latency_s=0.0,
+            ttft_s=None,
+            input_tokens=0,
+            output_tokens=0,
+            error="no samples",
+        )
+    sample = samples[0]
+    request = benchmark.build_request(sample, model)
+    start = time.perf_counter()
+    ttft: float | None = None
+    output_text = ""
+    in_tok = out_tok = 0
+    err: str | None = None
+    try:
+        # Use streaming for latency tasks, plain chat otherwise.
+        if benchmark.name == "latency":
+            async for chunk in bench_client.stream(request):
+                if chunk.ttft and ttft is None:
+                    ttft = time.perf_counter() - start
+                if chunk.delta:
+                    output_text += chunk.delta
+                if chunk.usage:
+                    in_tok = chunk.usage.input_tokens or in_tok
+                    out_tok = chunk.usage.output_tokens or out_tok
+        else:
+            resp = await bench_client.chat(request)
+            output_text = resp.text
+            in_tok = resp.usage.input_tokens
+            out_tok = resp.usage.output_tokens
+    except Exception as e:  # noqa: BLE001
+        err = f"{type(e).__name__}: {e}"
+    latency = time.perf_counter() - start
+    grade = await benchmark.grade(sample, output_text, client=bench_client, judge_model=judge_model)
+    return SampleResult(
+        sample_id=sample.id,
+        output=output_text,
+        score=grade.score,
+        passed=grade.passed,
+        latency_s=latency,
+        ttft_s=ttft,
+        input_tokens=in_tok,
+        output_tokens=out_tok,
+        detail=grade.detail,
+        error=err,
+        tags=sample.tags,
+    )
+
+
+async def run_benchmark(
+    benchmark: Benchmark,
+    model: str,
+    bench_client: LLMClient,
+    judge_client: LLMClient | None = None,
+    judge_model: str | None = None,
+    on_event: EventCallback | None = None,
+    *,
+    max_concurrency: int = 4,
+) -> TaskScore:
+    """Run a single benchmark for a single model with bounded concurrency."""
+
+    samples = benchmark.sliced_samples()
+    sem = asyncio.Semaphore(max_concurrency)
+    results: list[SampleResult] = []
+    completed = 0
+    total = len(samples)
+
+    async def _run_one(sample):
+        nonlocal completed
+        request = benchmark.build_request(sample, model)
+        start = time.perf_counter()
+        ttft: float | None = None
+        output_text = ""
+        in_tok = out_tok = 0
+        err: str | None = None
+        client = bench_client
+        grading_client = judge_client or bench_client
+        try:
+            if benchmark.name == "latency":
+                async with sem:
+                    async for chunk in client.stream(request):
+                        if chunk.ttft and ttft is None:
+                            ttft = time.perf_counter() - start
+                        if chunk.delta:
+                            output_text += chunk.delta
+                        if chunk.usage:
+                            in_tok = chunk.usage.input_tokens or in_tok
+                            out_tok = chunk.usage.output_tokens or out_tok
+            else:
+                async with sem:
+                    resp = await client.chat(request)
+                    output_text = resp.text
+                    in_tok = resp.usage.input_tokens
+                    out_tok = resp.usage.output_tokens
+        except Exception as e:  # noqa: BLE001
+            err = f"{type(e).__name__}: {e}"
+        latency = time.perf_counter() - start
+        grade = await benchmark.grade(
+            sample, output_text, client=grading_client, judge_model=judge_model
+        )
+        completed += 1
+        res = SampleResult(
+            sample_id=sample.id,
+            output=output_text,
+            score=grade.score,
+            passed=grade.passed,
+            latency_s=latency,
+            ttft_s=ttft,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            detail=grade.detail,
+            error=err,
+            tags=sample.tags,
+        )
+        if on_event is not None:
+            await on_event(
+                "sample_done",
+                {
+                    "task": benchmark.name,
+                    "model": model,
+                    "completed": completed,
+                    "total": total,
+                    "sample_id": sample.id,
+                    "passed": res.passed,
+                    "score": res.score,
+                    "latency_s": res.latency_s,
+                    "tokens_per_s": (
+                        res.output_tokens / res.latency_s
+                        if res.latency_s > 0 and res.output_tokens
+                        else 0.0
+                    ),
+                },
+            )
+        return res
+
+    tasks = [asyncio.create_task(_run_one(s)) for s in samples]
+    results = await asyncio.gather(*tasks)
+    if on_event is not None:
+        await on_event(
+            "task_done",
+            {"task": benchmark.name, "model": model, "n": len(results)},
+        )
+
+    # Aggregate
+    latencies = sorted(r.latency_s for r in results if r.latency_s > 0)
+    if latencies:
+        median = latencies[len(latencies) // 2]
+        p95 = latencies[max(0, int(len(latencies) * 0.95) - 1)]
+    else:
+        median = p95 = 0.0
+    tps_list = [
+        r.output_tokens / r.latency_s
+        for r in results
+        if r.latency_s > 0 and r.output_tokens
+    ]
+    mean_tps = sum(tps_list) / len(tps_list) if tps_list else 0.0
+    return TaskScore(
+        task=benchmark.name,
+        n=len(results),
+        passed=sum(1 for r in results if r.passed),
+        mean_score=sum(r.score for r in results) / len(results) if results else 0.0,
+        median_latency_s=median,
+        p95_latency_s=p95,
+        mean_tokens_per_s=mean_tps,
+        total_input_tokens=sum(r.input_tokens for r in results),
+        total_output_tokens=sum(r.output_tokens for r in results),
+        cost_usd=0.0,  # filled in below by orchestrator
+        per_sample=list(results),
+    )
+
+
+async def run_all(
+    models: list[str],
+    benchmarks: list[Benchmark],
+    make_client: Callable[[str], LLMClient],
+    pricing: PricingConfig,
+    judge_model: str | None = None,
+    on_event: EventCallback | None = None,
+    *,
+    max_concurrency: int = 4,
+) -> RunResult:
+    """Run every (model, benchmark) pair. Clients are created lazily per-model."""
+    result = RunResult()
+
+    for model in models:
+        client = make_client(model)
+        try:
+            if on_event is not None:
+                await on_event("model_start", {"model": model})
+            for bench in benchmarks:
+                try:
+                    score = await run_benchmark(
+                        bench,
+                        model,
+                        client,
+                        judge_client=client,
+                        judge_model=judge_model,
+                        on_event=on_event,
+                        max_concurrency=max_concurrency,
+                    )
+                    # Backfill cost
+                    score.cost_usd = cost_for(model, _usage_from_score(score), pricing)
+                    result.by_model_task[(model, bench.name)] = score
+                    result.by_model[model].append(score)
+                    if on_event is not None:
+                        await on_event("task_done", {"task": bench.name, "model": model, "n": score.n})
+                except Exception as e:  # noqa: BLE001
+                    result.errors.append((model, bench.name, f"{type(e).__name__}: {e}"))
+                    if on_event is not None:
+                        await on_event("error", {"model": model, "task": bench.name, "msg": str(e)})
+            if on_event is not None:
+                await on_event("model_done", {"model": model})
+        finally:
+            await _close_client(client)
+
+    return result
+
+
+def _usage_from_score(score: TaskScore):  # type: ignore[no-untyped-def]
+    from llm_bench.clients.base import TokenUsage
+
+    return TokenUsage(
+        input_tokens=score.total_input_tokens,
+        output_tokens=score.total_output_tokens,
+    )
+
+
+async def _close_client(client: LLMClient) -> None:
+    """No-op for now; concrete clients don't hold long-lived resources."""
+    return None

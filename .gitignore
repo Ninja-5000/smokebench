@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+
+# llm-bench runtime outputs
+llm_bench_results/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store

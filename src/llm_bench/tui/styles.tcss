@@ -1,0 +1,33 @@
+Screen {
+    align: center middle;
+}
+
+.endpoint-grid {
+    grid-size: 2;
+    grid-gutter: 1 2;
+    width: 90%;
+    max-width: 100;
+}
+
+.section-title {
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+.help {
+    color: $text-muted;
+}
+
+.error {
+    color: $error;
+}
+
+.success {
+    color: $success;
+}
+
+DataTable > .datatable--header {
+    text-style: bold;
+    background: $boost;
+}

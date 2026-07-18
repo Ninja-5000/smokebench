@@ -1,0 +1,178 @@
+[
+  {
+    "id": "instr_1",
+    "prompt": "Extract the person's name, age, and city from the following text. Respond with a JSON object with keys: name (string), age (integer), city (string).\n\nText: 'Maria Rodriguez, a 34-year-old engineer from Barcelona, won the award.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "age": {"type": "integer"},
+        "city": {"type": "string"}
+      },
+      "required": ["name", "age", "city"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_2",
+    "prompt": "Convert the following date expressions to ISO 8601 (YYYY-MM-DD). Respond with JSON: {\"dates\": [list of strings]}.\n\nDates: 'Jan 5, 2024', '2023-12-31', 'March 15, 2025'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "dates": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "required": ["dates"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_3",
+    "prompt": "Given the product review, return JSON with fields: sentiment (\"positive\"|\"negative\"|\"neutral\"), rating_guess (integer 1-5), keywords (array of up to 3 short strings).\n\nReview: 'The headphones arrived quickly and the sound quality is amazing, but the ear cushions started peeling after a week. Decent for the price, I guess.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+        "rating_guess": {"type": "integer", "minimum": 1, "maximum": 5},
+        "keywords": {"type": "array", "items": {"type": "string"}, "maxItems": 3}
+      },
+      "required": ["sentiment", "rating_guess", "keywords"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_4",
+    "prompt": "Parse the following recipe and return JSON with: title (string), servings (integer), ingredients (array of strings), steps (array of strings).\n\n'Classic Pancakes (serves 4). Ingredients: 2 cups flour, 2 eggs, 1.5 cups milk, 2 tbsp sugar. Steps: Mix dry ingredients, whisk wet ingredients, combine, cook on a hot griddle for 2 minutes per side.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "servings": {"type": "integer"},
+        "ingredients": {"type": "array", "items": {"type": "string"}},
+        "steps": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["title", "servings", "ingredients", "steps"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_5",
+    "prompt": "Given the meeting transcript, return JSON: {\"action_items\": [{\"owner\": str, \"task\": str, \"due\": str|null}]}.\n\nTranscript: 'Alice will draft the proposal by Friday. Bob needs to review the budget next week. Carol will schedule the design review for next Tuesday.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "action_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "owner": {"type": "string"},
+              "task": {"type": "string"},
+              "due": {"type": ["string", "null"]}
+            },
+            "required": ["owner", "task", "due"]
+          }
+        }
+      },
+      "required": ["action_items"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_6",
+    "prompt": "Extract every email address mentioned. Return JSON: {\"emails\": [list of strings]}.\n\nText: 'Contact Jane at jane.doe@example.com or her colleague at support@acme.io. For sales, email sales@acme.io.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "emails": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["emails"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_7",
+    "prompt": "Classify the bug report. Return JSON: {\"category\": \"ui\"|\"backend\"|\"performance\"|\"security\"|\"other\", \"severity\": \"low\"|\"medium\"|\"high\", \"reproducible\": bool}.\n\nReport: 'After clicking submit 10 times in a row, the server returned a 500 error. The UI froze for 5 seconds. I can reproduce this every time.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "category": {"type": "string", "enum": ["ui", "backend", "performance", "security", "other"]},
+        "severity": {"type": "string", "enum": ["low", "medium", "high"]},
+        "reproducible": {"type": "boolean"}
+      },
+      "required": ["category", "severity", "reproducible"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_8",
+    "prompt": "Translate the following text to French. Return JSON: {\"translation\": str, \"word_count\": int}.\n\nText: 'The quick brown fox jumps over the lazy dog.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "translation": {"type": "string"},
+        "word_count": {"type": "integer"}
+      },
+      "required": ["translation", "word_count"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_9",
+    "prompt": "Given a transaction, return JSON: {\"amount_usd\": number, \"merchant\": string, \"category\": \"food\"|\"travel\"|\"shopping\"|\"other\"}.\n\nTransaction: 'STARBUCKS #4521 NYC $6.45 on 2024-05-12'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "amount_usd": {"type": "number"},
+        "merchant": {"type": "string"},
+        "category": {"type": "string", "enum": ["food", "travel", "shopping", "other"]}
+      },
+      "required": ["amount_usd", "merchant", "category"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_10",
+    "prompt": "Convert the following CSV row to JSON with the header row as keys. Return JSON object only.\n\nHeader: id,name,price,in_stock\nRow: 42,Widget,9.99,true",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "price": {"type": "number"},
+        "in_stock": {"type": "boolean"}
+      },
+      "required": ["id", "name", "price", "in_stock"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_11",
+    "prompt": "Given the paragraph, return JSON: {\"main_entity\": str, \"sentiment\": str, \"key_facts\": [str, ...]}. key_facts should have 1-3 items.\n\nParagraph: 'Tesla reported record deliveries of 1.8 million vehicles in 2024, beating analyst expectations. CEO Elon Musk said the company's new factories in Mexico and Berlin are ramping up production. Investors responded positively, pushing shares up 6%.'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "main_entity": {"type": "string"},
+        "sentiment": {"type": "string"},
+        "key_facts": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 3}
+      },
+      "required": ["main_entity", "sentiment", "key_facts"]
+    },
+    "grader": "json_schema"
+  },
+  {
+    "id": "instr_12",
+    "prompt": "Given a math word problem, return JSON: {\"equation\": str, \"answer\": number}.\n\nProblem: 'A store sells apples for $2 each. If I buy 7 apples and pay with a $20 bill, how much change do I get?'",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "equation": {"type": "string"},
+        "answer": {"type": "number"}
+      },
+      "required": ["equation", "answer"]
+    },
+    "grader": "json_schema"
+  }
+]

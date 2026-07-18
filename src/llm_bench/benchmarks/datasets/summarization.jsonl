@@ -1,0 +1,52 @@
+[
+  {
+    "id": "sum_1",
+    "source": "OpenAI announced on Tuesday that it would acquire io, a startup co-founded by former Apple designer Jony Ive, in an all-stock deal valued at approximately $6.4 billion. The deal marks OpenAI's largest acquisition to date and signals a major push into consumer hardware. Ive and his design firm LoveFrom will assume creative and design responsibilities across both companies, though they will operate independently. The transaction is expected to close later this year subject to regulatory approval. OpenAI CEO Sam Altman said the partnership will help create a new generation of AI-powered devices that move beyond traditional screens and keyboards.",
+    "reference": "OpenAI is acquiring io, a Jony Ive co-founded startup, in a $6.4 billion all-stock deal. Ive and LoveFrom will lead design across both companies, which will operate independently. The deal, OpenAI's largest, is pending regulatory approval."
+  },
+  {
+    "id": "sum_2",
+    "source": "The Federal Reserve held interest rates steady on Wednesday, but Chair Jerome Powell signaled that the central bank remains prepared to cut rates if inflation continues to cool. The decision keeps the federal funds rate in the 4.25% to 4.5% range, where it has been since December. Powell noted that recent economic data has been mixed, with a strong labor market but softer consumer spending. Markets reacted mildly, with the S&P 500 closing up 0.3%. The Fed's next meeting is scheduled for late June, when officials will refresh their economic projections.",
+    "reference": "The Federal Reserve kept interest rates at 4.25%-4.5% but signaled potential cuts if inflation cools. Chair Powell cited mixed economic data. Markets rose slightly. The next meeting is in late June with updated projections."
+  },
+  {
+    "id": "sum_3",
+    "source": "Researchers at MIT have developed a new type of solar cell that achieves a record 35% efficiency by stacking perovskite materials on top of traditional silicon. The breakthrough, published in Nature, addresses a long-standing challenge in perovskite stability. Perovskite solar cells have been a hot research area for over a decade because they are cheaper to manufacture than silicon, but they degrade quickly when exposed to heat and moisture. The MIT team says their new encapsulation technique, combined with a carefully tuned perovskite composition, allows the cells to maintain 90% of their efficiency after 1,000 hours of accelerated aging tests.",
+    "reference": "MIT researchers created a perovskite-on-silicon solar cell with 35% efficiency and improved durability, retaining 90% efficiency after 1,000 hours of aging tests. The advance addresses perovskite's historical instability problem."
+  },
+  {
+    "id": "sum_4",
+    "source": "The city of Paris announced an ambitious plan to plant 170,000 trees by 2026 as part of its effort to combat urban heat islands. The project, which will cost an estimated €90 million, focuses on under-served neighborhoods that experience the highest summer temperatures. Mayor Anne Hidalgo said the trees will provide shade, reduce air pollution, and improve residents' mental health. The announcement comes ahead of the 2024 Summer Olympics, which Paris will host, and the city hopes the greenery will leave a lasting legacy for residents and visitors alike.",
+    "reference": "Paris will plant 170,000 trees by 2026 in a €90 million effort to fight urban heat, focusing on underserved neighborhoods. The project is part of the city's Olympic legacy plan."
+  },
+  {
+    "id": "sum_5",
+    "source": "A long-lost painting by Rembrandt, 'The Storm on the Sea of Galilee', was stolen from the Isabella Stewart Gardner Museum in Boston in 1990 and remains missing to this day. The heist, which involved two men disguised as police officers, also netted a Vermeer and works by Degas and Manet, totaling an estimated $500 million in stolen art. Despite a $10 million reward and decades of FBI investigation, no suspects have ever been charged. The museum still displays the empty frames in place of the stolen works, a haunting reminder of the largest unsolved art theft in history.",
+    "reference": "Rembrandt's 'The Storm on the Sea of Galilee' was stolen from Boston's Isabella Stewart Gardner Museum in 1990 in a $500M heist, alongside a Vermeer and other works. Despite a $10M reward, the case remains unsolved and the museum keeps the empty frames on display."
+  },
+  {
+    "id": "sum_6",
+    "source": "Apple is reportedly in early talks with Perplexity AI about a potential acquisition that could value the AI search startup at around $14 billion. The discussions, which are still in preliminary stages, would give Apple a stronger foothold in the rapidly growing AI search market. Perplexity, which raised $250 million in funding earlier this year, has emerged as one of the most prominent AI-powered answer engines, competing with Google and OpenAI. The deal is not guaranteed, and Apple has also explored other options, including building its own AI search capabilities.",
+    "reference": "Apple is in early acquisition talks with Perplexity AI at a $14B valuation. Perplexity, a $250M-funded AI search startup, would strengthen Apple's position against Google and OpenAI. The deal is not finalized."
+  },
+  {
+    "id": "sum_7",
+    "source": "A magnitude 7.2 earthquake struck off the coast of Hokkaido, Japan, on Saturday, prompting a brief tsunami warning that was later lifted. The quake's epicenter was about 60 kilometers offshore at a depth of 30 kilometers. No major damage or casualties have been reported, though some trains were temporarily halted as a precaution. Japan, which sits on the Pacific Ring of Fire, experiences frequent seismic activity, and strict building codes have limited damage from major earthquakes in recent decades.",
+    "reference": "A magnitude 7.2 earthquake off Hokkaido's coast triggered a brief tsunami warning that was later lifted. No major damage or casualties reported. Japan, on the Pacific Ring of Fire, has strict building codes that limit earthquake damage."
+  },
+  {
+    "id": "sum_8",
+    "source": "Microsoft's Activision Blizzard King division reported record quarterly gaming revenue of $7.5 billion, driven largely by strong performances in Call of Duty and Diablo IV. The results, released as part of Microsoft's broader earnings, mark the first full quarter in which Activision Blizzard's financials are consolidated following the $69 billion acquisition completed in late 2023. Microsoft said the integration is progressing smoothly and that cloud streaming of Activision games to Game Pass subscribers will begin later this year, a long-promised feature that was held up by regulatory scrutiny.",
+    "reference": "Microsoft's Activision Blizzard reported $7.5B in quarterly gaming revenue, its first full quarter post-acquisition. Call of Duty and Diablo IV led results. Game Pass cloud streaming of Activision titles is expected later this year."
+  },
+  {
+    "id": "sum_9",
+    "source": "DeepMind, Google's AI research lab, published a paper on Friday claiming its latest model, AlphaProof, has achieved silver-medal level performance on problems from the International Mathematical Olympiad. The model combined a large language model with a formal proof system called Lean, allowing it to verify its own reasoning. While the result is impressive, the system required hours of computation per problem, making it impractical for everyday use. DeepMind says the work demonstrates progress toward general AI systems that can reason rigorously about mathematics.",
+    "reference": "Google DeepMind's AlphaProof achieved IMO silver-medal-level performance by combining an LLM with the Lean formal proof system. The approach, while impressive, required hours of compute per problem and is not yet practical for daily use."
+  },
+  {
+    "id": "sum_10",
+    "source": "The European Space Agency's Hera mission launched successfully from Cape Canaveral aboard a SpaceX Falcon 9, beginning a two-year journey to the asteroid Dimorphos. The mission is a follow-up to NASA's DART spacecraft, which deliberately crashed into Dimorphos in 2022 to test whether a kinetic impactor could deflect an asteroid. Hera will survey the impact crater and measure the asteroid's mass, providing crucial data for planetary defense. The mission, a collaboration between 18 ESA member states, cost approximately €363 million.",
+    "reference": "ESA's Hera mission launched on a SpaceX Falcon 9 to survey the asteroid Dimorphos, two years after NASA's DART impactor struck it. Hera will measure the impact crater and the asteroid's mass to inform planetary defense. Cost: ~€363M, 18 member states."
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ce_1",
+    "prompt": "Explain what the following Python function does in 2-3 sentences:\n\n```python\ndef f(x):\n    return x if x <= 1 else f(x-1) + f(x-2)\n```",
+    "reference": "It computes the nth Fibonacci number using naive recursion, with exponential time complexity due to repeated subcalls.",
+    "rubric": "Score 1-5 for correctness and clarity. 5 = identifies Fibonacci + notes inefficiency. 3 = mentions Fibonacci without complexity. 1 = wrong.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_2",
+    "prompt": "Explain what this SQL query does:\n\n```sql\nSELECT u.name, COUNT(o.id) AS order_count\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id\nWHERE u.created_at >= '2024-01-01'\nGROUP BY u.id\nHAVING order_count > 5\nORDER BY order_count DESC;\n```",
+    "reference": "Returns names of users created on or after 2024-01-01 with more than 5 orders, ordered by order count descending.",
+    "rubric": "Score 1-5 for correctness and clarity. 5 = correct, mentions all clauses (left join, having, order by).",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_3",
+    "prompt": "Explain what this JavaScript function does in plain English:\n\n```javascript\nfunction debounce(fn, ms) {\n  let t;\n  return function(...args) {\n    clearTimeout(t);\n    t = setTimeout(() => fn.apply(this, args), ms);\n  };\n}\n```",
+    "reference": "It returns a wrapper function that delays calling `fn` until `ms` milliseconds have passed without the wrapper being called again — the classic debounce utility.",
+    "rubric": "1-5. 5 = identifies debounce + correctly explains call cancellation. 3 = debounce without cancellation details.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_4",
+    "prompt": "Explain the time and space complexity of the following algorithm:\n\n```python\ndef sort_colors(colors):\n    counts = [0, 0, 0]\n    for c in colors:\n        counts[c] += 1\n    i = 0\n    for n, c in enumerate(counts):\n        for _ in range(c):\n            colors[i] = n\n            i += 1\n```",
+    "reference": "O(n) time and O(1) extra space (counts array is bounded by the value range). It's counting sort for small integer keys.",
+    "rubric": "1-5. 5 = O(n) time + O(1) space + identifies counting sort. 3 = O(n) time only.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_5",
+    "prompt": "What does this regular expression match?  Explain in one sentence:\n\n`^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$`",
+    "reference": "It matches an IPv4 address in dotted-decimal notation, though it does not validate the octet ranges (e.g. 999.999.999.999 would match).",
+    "rubric": "1-5. 5 = IPv4 address + notes the lack of range validation. 3 = IPv4 only.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_6",
+    "prompt": "Explain the bug in the following Python code:\n\n```python\ndef average(nums):\n    total = 0\n    for n in nums:\n        total = total + n\n    return total / len(nums)\n```\n\nWhat edge case does it fail on, and how would you fix it?",
+    "reference": "It throws ZeroDivisionError on an empty list. Fix: return 0 (or None) when len(nums) == 0.",
+    "rubric": "1-5. 5 = identifies empty list crash + provides fix. 3 = identifies crash without fix. 1 = wrong.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_7",
+    "prompt": "Refactor this code to be more Pythonic. Explain your changes:\n\n```python\nresult = []\nfor x in range(10):\n    if x % 2 == 0:\n        result.append(x * x)\n```",
+    "reference": "result = [x*x for x in range(10) if x % 2 == 0]. Uses a list comprehension, more concise and idiomatic.",
+    "rubric": "1-5. 5 = list comprehension. 3 = filter+map. 1 = no real refactor.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_8",
+    "prompt": "What is a closure in JavaScript? Give a one-paragraph explanation with a short example.",
+    "reference": "A closure is a function bundled with references to the variables in its surrounding lexical scope. Example: `function makeCounter() { let n = 0; return () => ++n; }` — the returned function captures `n`.",
+    "rubric": "1-5. 5 = correct definition + working example. 3 = correct def, weak example. 1 = wrong.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_9",
+    "prompt": "Explain the difference between `==` and `===` in JavaScript in 1-2 sentences.",
+    "reference": "`==` performs type coercion before comparison; `===` requires both value and type to match (strict equality).",
+    "rubric": "1-5. 5 = coercion vs strict. 1 = wrong.",
+    "grader": "judge"
+  },
+  {
+    "id": "ce_10",
+    "prompt": "What does the `yield` keyword do in Python? How does it differ from `return`?",
+    "reference": "`yield` turns a function into a generator that produces a sequence of values lazily. Unlike `return`, the function's state is preserved between successive calls to `next()`.",
+    "rubric": "1-5. 5 = generator + state preservation. 3 = generator only. 1 = wrong.",
+    "grader": "judge"
+  }
+]

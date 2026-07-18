@@ -1,0 +1,50 @@
+[
+  {
+    "id": "cw_1",
+    "prompt": "Write a 4-line poem about an astronaut who has just realized they are homesick, but only after they have left Earth's orbit. The poem should evoke loneliness but also wonder.",
+    "rubric": "1-5. 5 = 4 lines exactly, captures both homesickness and wonder. 3 = captures one theme. 1 = off-topic or wrong length.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_2",
+    "prompt": "Write a short (3-paragraph) opening for a mystery novel set in a small coastal town where the lighthouse keeper has gone missing. Establish a moody atmosphere without revealing the secret.",
+    "rubric": "1-5. 5 = moody atmosphere + 3 paragraphs + mystery without spoiler. 3 = 2 of 3 criteria. 1 = off-topic.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_3",
+    "prompt": "Invent a 3-line joke about a programmer who is afraid of the dark. Format: setup / punchline / tag.",
+    "rubric": "1-5. 5 = genuinely funny + 3 lines + correct format. 3 = coherent but weak. 1 = not a joke.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_4",
+    "prompt": "Write a 5-sentence monologue from the perspective of an old library book that has not been checked out in 30 years. The book should be reflective but not bitter.",
+    "rubric": "1-5. 5 = reflective, not bitter, 5 sentences, in-character. 3 = in-character but wrong length or tone. 1 = off.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_5",
+    "prompt": "Compose a 2-stanza limerick about a clumsy robot trying to bake a cake. Use rhyming couplets (A-A-B-B-A).",
+    "rubric": "1-5. 5 = correct limerick form (2 stanzas, AABBA) + on theme. 3 = theme correct, form approximate. 1 = off.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_6",
+    "prompt": "Write a short product description (2-3 sentences) for a fictional product: a smart umbrella that predicts rain. The tone should be witty but informative.",
+    "rubric": "1-5. 5 = witty + informative + 2-3 sentences. 3 = informative but flat. 1 = off.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_7",
+    "prompt": "Write a 4-line dialogue between a tired wizard and a very chatty magic sword. The wizard wants silence; the sword will not stop narrating his life.",
+    "rubric": "1-5. 5 = 4 lines, character voices distinct, humor. 3 = readable, themes hit. 1 = off.",
+    "grader": "judge"
+  },
+  {
+    "id": "cw_8",
+    "prompt": "Compose a 6-word story (a Hemingway pastiche) about a heist that goes unexpectedly right.",
+    "rubric": "1-5. 5 = exactly 6 words + twist/irony. 3 = 6 words but flat. 1 = wrong length or off-topic.",
+    "grader": "judge"
+  }
+]
