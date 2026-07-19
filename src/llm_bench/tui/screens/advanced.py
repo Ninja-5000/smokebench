@@ -69,13 +69,14 @@ class AdvancedScreen(Screen):
         if event.button.id == "save":
             state: AppState = self.app.state  # type: ignore[attr-defined]
             for cls in ALL_BENCHMARKS:
-                raw = self.query_one(f"#n_{cls.__name__}", Input).value.strip()
+                inst = cls()
+                raw = self.query_one(f"#n_{inst.name}", Input).value.strip()
                 if raw:
                     try:
-                        state.sample_overrides[cls().name] = int(raw)
+                        state.sample_overrides[inst.name] = int(raw)
                     except ValueError:
                         self._refresh_status(
-                            f"{cls.__name__}: invalid number '{raw}'", "error"
+                            f"{inst.name}: invalid number '{raw}'", "error"
                         )
                         return
             try:

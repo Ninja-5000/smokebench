@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 import pytest
+from textual.widgets import Button, Input
 
 from llm_bench.app import LLMBenchApp
 from llm_bench.tui.screens.run import _sanitize_id
@@ -48,3 +49,28 @@ def test_sanitize_id_is_valid_identifier(raw: str) -> None:
     assert re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_-]*", sanitized), (
         f"_sanitize_id({raw!r}) -> {sanitized!r} is not a valid Textual id"
     )
+
+
+@pytest.mark.asyncio
+async def test_advanced_screen_saves_sample_overrides() -> None:
+    """Regression: ensure the per-benchmark input IDs match between mount and read."""
+    from llm_bench.benchmarks import ALL_BENCHMARKS
+    from llm_bench.tui.screens.advanced import AdvancedScreen
+
+    state = AppState()
+    state.selected_benchmarks = [b().name for b in ALL_BENCHMARKS]
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await app.push_screen(AdvancedScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, AdvancedScreen)
+        # Set custom override on the first benchmark's input and click save.
+        first = ALL_BENCHMARKS[0]()
+        screen.query_one(f"#n_{first.name}", Input).value = "7"
+        screen.query_one("#concurrency", Input).value = "2"
+        screen.query_one("#save", Button).press()
+        await pilot.pause()
+        assert state.sample_overrides[first.name] == 7
+        assert state.max_concurrency == 2
