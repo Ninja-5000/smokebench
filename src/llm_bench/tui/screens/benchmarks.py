@@ -47,7 +47,10 @@ class BenchmarksScreen(Screen):
             HelpBar("Ctrl+N next · Esc back"),
             id="screen",
         )
+
+    def on_mount(self) -> None:
         boxes = self.query_one("#boxes", Vertical)
+        state: AppState = self.app.state  # type: ignore[attr-defined]
         for cls in ALL_BENCHMARKS:
             inst = cls()
             default = inst.name in (state.selected_benchmarks or []) or not state.selected_benchmarks
@@ -58,8 +61,6 @@ class BenchmarksScreen(Screen):
                     id=f"bench_{inst.name}",
                 )
             )
-
-    def on_mount(self) -> None:
         self._refresh_status("Pick one or more benchmarks. Defaults are pre-selected.")
 
     def _refresh_status(self, msg: str, kind: str = "info") -> None:
