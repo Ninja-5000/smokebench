@@ -22,7 +22,18 @@ from llm_bench.tui.widgets import HelpBar
 
 
 def _sanitize_id(s: str) -> str:
-    return s.replace("/", "-")
+    out = []
+    for ch in s:
+        if ch.isalnum() or ch == "-":
+            out.append(ch)
+        elif ch in ("/", ".", ":", " "):
+            out.append("-")
+        else:
+            out.append("_")
+    result = "".join(out)
+    if result and result[0].isdigit():
+        result = "_" + result
+    return result
 
 
 class RunScreen(Screen):
