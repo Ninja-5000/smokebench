@@ -26,7 +26,6 @@ class BenchmarksScreen(Screen):
     CSS_PATH = "../styles.tcss"
 
     def compose(self) -> ComposeResult:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
             Static("3 / 6 — Benchmarks", classes="section-title"),
             Static(

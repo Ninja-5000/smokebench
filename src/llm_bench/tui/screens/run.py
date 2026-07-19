@@ -21,6 +21,10 @@ from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
 
 
+def _sanitize_id(s: str) -> str:
+    return s.replace("/", "-")
+
+
 class RunScreen(Screen):
     BINDINGS: ClassVar[list[Binding]] = [
         Binding("p", "pause", "Pause/Resume"),
@@ -56,12 +60,13 @@ class RunScreen(Screen):
         bars = self.query_one("#bars", Vertical)
         for m in state.selected_models:
             for t in state.selected_benchmarks:
+                mid = _sanitize_id(m)
                 bars.mount(
-                    Static(f"{m} × {t}", id=f"hdr_{m}_{t}", classes="help")
+                    Static(f"{m} × {t}", id=f"hdr_{mid}_{t}", classes="help")
                 )
                 bars.mount(
                     ProgressBar(
-                        total=1, show_eta=False, id=f"bar_{m}_{t}"
+                        total=1, show_eta=False, id=f"bar_{mid}_{t}"
                     )
                 )
         self._paused = False
@@ -89,7 +94,8 @@ class RunScreen(Screen):
         # Set totals on progress bars
         for m in state.selected_models:
             for b in benchmarks:
-                pb = self.query_one(f"#bar_{m}_{b.name}", ProgressBar)
+                mid = _sanitize_id(m)
+                pb = self.query_one(f"#bar_{mid}_{b.name}", ProgressBar)
                 pb.total = max(1, len(b.sliced_samples()))
 
         def _make_client(model_id: str):
@@ -103,7 +109,7 @@ class RunScreen(Screen):
             while self._paused:
                 await asyncio.sleep(0.2)
             if kind == "sample_done":
-                bar = self.query_one(f"#bar_{payload['model']}_{payload['task']}", ProgressBar)
+                bar = self.query_one(f"#bar_{_sanitize_id(payload['model'])}_{payload['task']}", ProgressBar)
                 bar.progress = payload["completed"]
                 log.write_line(
                     f"[{payload['model']}/{payload['task']}] "

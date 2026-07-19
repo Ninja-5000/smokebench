@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
 
@@ -12,16 +11,10 @@ import respx
 
 from llm_bench.benchmarks import (
     CodeGenBenchmark,
-    CreativeWritingBenchmark,
-    InstructionJSONBenchmark,
-    LatencyBenchmark,
-    LongContextBenchmark,
     MathReasonBenchmark,
-    SummarizationBenchmark,
 )
 from llm_bench.clients import OpenAICompatClient
 from llm_bench.config import PricingConfig, PricingEntry
-from llm_bench.pricing import cost_for
 from llm_bench.results.recommend import recommend
 from llm_bench.results.report import markdown_report, terminal_table
 from llm_bench.results.store import save_result
@@ -56,10 +49,10 @@ async def test_full_pipeline_with_two_models(tmp_path: Path) -> None:
     """Run math + code + summarization on two mock models and verify the
     recommendation + report can be generated."""
     # Two models: m1 always answers 72, m2 always answers wrong.
-    m1_responses = {
+    _ = {
         "/chat/completions": _chat_mock("The answer is 72\n#### 72"),
     }
-    m2_responses = {
+    _ = {
         "/chat/completions": _chat_mock("I do not know."),
     }
 
@@ -70,7 +63,7 @@ async def test_full_pipeline_with_two_models(tmp_path: Path) -> None:
         def side_effect(request):
             call_count["n"] += 1
             # Alternate responses: even calls = m1, odd = m2
-            url = str(request.url)
+            _ = str(request.url)
             # We need a way to know which model is calling — but respx mocks
             # are at the URL level, not per-client. Use a single rotating
             # sequence instead. The runner builds separate clients per model,
