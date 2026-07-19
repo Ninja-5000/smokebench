@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from llm_bench.tui import LLMBenchApp
+from llm_bench.app import LLMBenchApp
 from llm_bench.tui.state import AppState
 
 

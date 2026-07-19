@@ -1,0 +1,27 @@
+# Per-model pricing in USD per 1M tokens (input / output)
+# Add entries here or via the TUI's "Advanced" screen (sample_overrides) + config file.
+# These are examples — replace with your provider's actual rates.
+
+entries:
+  gpt-4o:
+    input_per_million: 2.50
+    output_per_million: 10.00
+  gpt-4o-mini:
+    input_per_million: 0.15
+    output_per_million: 0.60
+  gpt-4-turbo:
+    input_per_million: 10.00
+    output_per_million: 30.00
+  claude-3-5-sonnet-20241022:
+    input_per_million: 3.00
+    output_per_million: 15.00
+  claude-3-5-haiku-20241022:
+    input_per_million: 0.80
+    output_per_million: 4.00
+  # Example for local/self-hosted (zero cost, but track throughput)
+  llama-3.1-8b-instruct:
+    input_per_million: 0.0
+    output_per_million: 0.0
+  llama-3.1-70b-instruct:
+    input_per_million: 0.0
+    output_per_million: 0.0

@@ -1,0 +1,92 @@
+# Custom benchmark: classify intent and extract entities
+name: "intent_classification"
+description: "Classify user utterances into intents and extract slots. Expects JSON output."
+samples:
+  - id: "ic_1"
+    prompt: |
+      Classify the user request and extract slots. Return ONLY valid JSON.
+
+      Request: "Book a flight from Seattle to Tokyo for March 15th"
+      JSON schema:
+      {
+        "type": "object",
+        "properties": {
+          "intent": {"type": "string", "enum": ["book_flight", "cancel_flight", "check_status"]},
+          "slots": {
+            "type": "object",
+            "properties": {
+              "origin": {"type": "string"},
+              "destination": {"type": "string"},
+              "date": {"type": "string"}
+            },
+            "required": ["origin", "destination", "date"]
+          }
+        },
+        "required": ["intent", "slots"]
+      }
+    grader: "json_schema"
+    schema:
+      type: object
+      properties:
+        intent: {type: string, enum: [book_flight, cancel_flight, check_status]}
+        slots:
+          type: object
+          properties:
+            origin: {type: string}
+            destination: {type: string}
+            date: {type: string}
+          required: [origin, destination, date]
+      required: [intent, slots]
+    request_kwargs:
+      temperature: 0.0
+      max_tokens: 256
+
+  - id: "ic_2"
+    prompt: |
+      Classify the user request and extract slots. Return ONLY valid JSON.
+
+      Request: "Cancel my reservation ABC123"
+      JSON schema:
+      {
+        "type": "object",
+        "properties": {
+          "intent": {"type": "string", "enum": ["book_flight", "cancel_flight", "check_status"]},
+          "slots": {
+            "type": "object",
+            "properties": {
+              "confirmation_code": {"type": "string"}
+            },
+            "required": ["confirmation_code"]
+          }
+        },
+        "required": ["intent", "slots"]
+      }
+    grader: "json_schema"
+    schema:
+      type: object
+      properties:
+        intent: {type: string, enum: [book_flight, cancel_flight, check_status]}
+        slots:
+          type: object
+          properties:
+            confirmation_code: {type: string}
+          required: [confirmation_code]
+      required: [intent, slots]
+    request_kwargs:
+      temperature: 0.0
+      max_tokens: 256
+
+  - id: "ic_3"
+    prompt: |
+      Summarize the following in exactly 3 bullet points. Return ONLY a JSON array of strings.
+
+      "The quarterly earnings call revealed that revenue grew 12% YoY to $4.2B, driven by cloud services. Net income was $890M, up from $780M. The CFO guided for 10-14% growth next quarter."
+    grader: "json_schema"
+    schema:
+      type: array
+      items: {type: string}
+      minItems: 3
+      maxItems: 3
+    request_kwargs:
+      temperature: 0.0
+      max_tokens: 128
