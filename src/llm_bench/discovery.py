@@ -26,6 +26,9 @@ async def fetch_models(
     if protocol == "auto":
         chosen = await detect_protocol(base_url, api_key)
     client: LLMClient = make_client(chosen, base_url, api_key)
+    # Probe first to verify connectivity
+    if not await client.probe():
+        return DiscoveryResult(models=[], protocol=chosen, used_fallback=False)
     try:
         models = await client.list_models()
     except Exception:

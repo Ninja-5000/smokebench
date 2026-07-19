@@ -23,7 +23,6 @@ class AdvancedScreen(Screen):
     CSS_PATH = "../styles.tcss"
 
     def compose(self) -> ComposeResult:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
             Static("Advanced settings", classes="section-title"),
             Static(
@@ -40,6 +39,9 @@ class AdvancedScreen(Screen):
             HelpBar("Esc back"),
             id="screen",
         )
+
+    def on_mount(self) -> None:
+        state: AppState = self.app.state  # type: ignore[attr-defined]
         form = self.query_one("#form", Vertical)
         for cls in ALL_BENCHMARKS:
             inst = cls()

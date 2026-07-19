@@ -50,7 +50,10 @@ class OpenAICompatClient(LLMClient):
         try:
             async with self._client(timeout=10.0) as http:
                 resp = await http.get("/models")
-                return resp.status_code < 500
+                if resp.status_code != 200:
+                    return False
+                data = resp.json()
+                return bool(data.get("data"))
         except httpx.HTTPError:
             return False
 
