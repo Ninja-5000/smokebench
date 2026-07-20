@@ -11,12 +11,14 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
 
+from llm_bench.discovery import fetch_models
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
 
 
 class JudgePickerScreen(Screen):
     BINDINGS: ClassVar[list[Binding]] = [
+        Binding("ctrl+t", "test_connection", "Test connection"),
         Binding("ctrl+n", "next_screen", "Next →", priority=True),
         Binding("escape", "back", "Back"),
     ]
@@ -74,21 +76,53 @@ class JudgePickerScreen(Screen):
             ),
             Static("", id="status"),
             Horizontal(
-                Button("← Back", id="back", variant="default"),
+                Button("Test connection", id="test", variant="primary"),
                 Button("Next →", id="next", variant="success"),
+                id="actions",
             ),
-            HelpBar("Ctrl+N next · Esc back"),
+            Horizontal(
+                Button("← Back", id="back", variant="default"),
+            ),
+            HelpBar("Ctrl+T test · Ctrl+N next · Esc back"),
             id="screen",
         )
 
     def _refresh_status(self, msg: str, kind: str = "info") -> None:
-        cls = {"info": "", "error": "error", "success": "success"}[kind]
+        cls = {"info": "", "error": "error", "success": "success", "warning": "warning"}[kind]
         w = self.query_one("#status", Static)
         w.set_classes(cls)
         w.update(msg)
 
+    async def action_test_connection(self) -> None:
+        judge_url = self.query_one("#judge_url", Input).value.strip()
+        judge_key = self.query_one("#judge_key", Input).value.strip()
+        state: AppState = self.app.state  # type: ignore[attr-defined]
+        url = judge_url or state.base_url
+        key = judge_key or state.api_key
+        if not url:
+            self._refresh_status("Enter a URL or configure the main endpoint first.", "error")
+            return
+        self._refresh_status("Probing endpoint…", "info")
+        try:
+            discovery = await fetch_models(url, key, "auto")
+        except Exception as e:  # noqa: BLE001
+            self._refresh_status(f"Connection failed: {e}", "error")
+            return
+        count = len(discovery.models)
+        if count == 0:
+            self._refresh_status(
+                "Reachable, but no models found at /models. Check the URL.", "warning",
+            )
+        else:
+            self._refresh_status(
+                f"Connected. Found {count} model(s). Protocol: {discovery.protocol}.",
+                "success",
+            )
+
     def on_button_pressed(self, event: Button.Pressed) -> None:  # type: ignore[override]
-        if event.button.id == "back":
+        if event.button.id == "test":
+            self.run_worker(self.action_test_connection(), exclusive=False)
+        elif event.button.id == "back":
             self.app.pop_screen()
         elif event.button.id == "next":
             self._advance()
