@@ -96,7 +96,11 @@ class EndpointScreen(Screen):
             return
         count = len(discovery.models)
         chosen = discovery.protocol
-        if count == 0:
+        if not discovery.probe_ok:
+            self._set_status(
+                "Connection failed. Check the URL and try again.", "error",
+            )
+        elif count == 0:
             # Reachable but either no /models endpoint or empty list. Probe is
             # the source of truth: fetch_models returns [] when the probe fails
             # OR when the model list is empty. Either way, don't claim success.

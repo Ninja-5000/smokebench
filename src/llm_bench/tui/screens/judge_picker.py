@@ -109,7 +109,11 @@ class JudgePickerScreen(Screen):
             self._refresh_status(f"Connection failed: {e}", "error")
             return
         count = len(discovery.models)
-        if count == 0:
+        if not discovery.probe_ok:
+            self._refresh_status(
+                "Connection failed. Check the URL and try again.", "error",
+            )
+        elif count == 0:
             self._refresh_status(
                 "Reachable, but no models found at /models. Check the URL.", "warning",
             )

@@ -83,7 +83,7 @@ async def test_endpoint_connection_warns_on_empty_models(monkeypatch) -> None:
     from llm_bench.tui.screens.endpoint import EndpointScreen
 
     async def fake_fetch(base_url, api_key, protocol):
-        return DiscoveryResult(models=[], protocol="openai", used_fallback=False)
+        return DiscoveryResult(models=[], protocol="openai", used_fallback=False, probe_ok=True)
 
     state = AppState()
     state.base_url = "http://example.com"
@@ -116,6 +116,7 @@ async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
             models=[ModelInfo(id="gpt-4o"), ModelInfo(id="gpt-4o-mini")],
             protocol="openai",
             used_fallback=False,
+            probe_ok=True,
         )
 
     state = AppState()
@@ -135,3 +136,30 @@ async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
 
         w = screen.query_one("#status", Static)
         assert "success" in w.classes, f"expected success class, got {w.classes!r}"
+
+
+@pytest.mark.asyncio
+async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> None:
+    """When probe fails (bad URL), show 'error' not 'warning'."""
+    from llm_bench.discovery import DiscoveryResult
+    from llm_bench.tui.screens.endpoint import EndpointScreen
+
+    async def fake_fetch(base_url, api_key, protocol):
+        return DiscoveryResult(models=[], protocol="openai", used_fallback=False, probe_ok=False)
+
+    state = AppState()
+    state.base_url = "http://invalid"
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, EndpointScreen)
+        monkeypatch.setattr(
+            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+        )
+        await screen.action_test_connection()
+        await pilot.pause()
+        from textual.widgets import Static
+
+        w = screen.query_one("#status", Static)
+        assert "error" in w.classes, f"expected error class, got {w.classes!r}"

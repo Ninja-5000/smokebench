@@ -13,6 +13,7 @@ class DiscoveryResult:
     models: list[ModelInfo]
     protocol: str
     used_fallback: bool = False
+    probe_ok: bool = False
 
 
 async def fetch_models(
@@ -28,12 +29,12 @@ async def fetch_models(
     client: LLMClient = make_client(chosen, base_url, api_key)
     # Probe first to verify connectivity
     if not await client.probe():
-        return DiscoveryResult(models=[], protocol=chosen, used_fallback=False)
+        return DiscoveryResult(models=[], protocol=chosen, used_fallback=False, probe_ok=False)
     try:
         models = await client.list_models()
     except Exception:
-        return DiscoveryResult(models=[], protocol=chosen, used_fallback=False)
-    return DiscoveryResult(models=models, protocol=chosen, used_fallback=False)
+        return DiscoveryResult(models=[], protocol=chosen, used_fallback=False, probe_ok=True)
+    return DiscoveryResult(models=models, protocol=chosen, used_fallback=False, probe_ok=True)
 
 
 def parse_manual_models(spec: str) -> list[ModelInfo]:
