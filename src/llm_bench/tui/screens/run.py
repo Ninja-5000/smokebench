@@ -49,6 +49,7 @@ class RunScreen(Screen):
         yield Container(
             Static("5 / 6 — Running", classes="section-title"),
             Static("", id="summary"),
+            Static("", id="current", classes="help"),
             Vertical(id="bars"),
             Static("Log:", classes="help"),
             Log(id="log", highlight=False, max_lines=200),
@@ -66,20 +67,28 @@ class RunScreen(Screen):
         self._benchmarks = self._build_benchmarks(state)
         runnable = [b for b in self._benchmarks if len(b.sliced_samples()) > 0]
         skipped = [b for b in self._benchmarks if len(b.sliced_samples()) == 0]
+        self._total_samples = sum(
+            len(b.sliced_samples()) * len(state.selected_models)
+            for b in runnable
+        )
+        self._completed_samples = 0
         models = ", ".join(state.selected_models)
         tasks = ", ".join(b.name for b in runnable)
         self.query_one("#summary", Static).update(
-            f"Models: {models}\nBenchmarks: {tasks}"
+            f"Models: {models}\nBenchmarks: {tasks}\nOverall: 0 / {self._total_samples} samples"
         )
         for b in skipped:
             self.query_one("#log", Log).write_line(
                 f"[SKIP] {b.name} has 0 samples — skipping."
             )
-        # Build progress bars: one per (model, task)
+        # Build progress bars: one per (model, task), grouped by model
         bars = self.query_one("#bars", Vertical)
         for m in state.selected_models:
+            mid = _sanitize_id(m)
+            bars.mount(
+                Static(f"─ {m} ─", id=f"sep_{mid}", classes="help")
+            )
             for b in runnable:
-                mid = _sanitize_id(m)
                 bars.mount(
                     Static(f"{m} × {b.name}", id=f"hdr_{mid}_{b.name}", classes="help")
                 )
@@ -88,6 +97,9 @@ class RunScreen(Screen):
                         total=max(1, len(b.sliced_samples())), show_eta=False, id=f"bar_{mid}_{b.name}"
                     )
                 )
+        self._paused = False
+        self._cancelled = False
+        self.run_worker(self._run(), exclusive=True)
         self._paused = False
         self._cancelled = False
         self.run_worker(self._run(), exclusive=True)
@@ -140,8 +152,17 @@ class RunScreen(Screen):
             while self._paused:
                 await asyncio.sleep(0.2)
             if kind == "sample_done":
+                self._completed_samples += 1
                 bar = self.query_one(f"#bar_{_sanitize_id(payload['model'])}_{payload['task']}", ProgressBar)
                 bar.progress = payload["completed"]
+                self.query_one("#current", Static).update(
+                    f"Current: {payload['model']} → {payload['task']} → sample {payload['sample_id']}"
+                )
+                self.query_one("#summary", Static).update(
+                    f"Models: {', '.join(state.selected_models)}\n"
+                    f"Benchmarks: {', '.join(b.name for b in benchmarks)}\n"
+                    f"Overall: {self._completed_samples} / {self._total_samples} samples"
+                )
                 log.write_line(
                     f"[{payload['model']}/{payload['task']}] "
                     f"{payload['sample_id']} {'PASS' if payload['passed'] else 'FAIL'} "
@@ -152,6 +173,14 @@ class RunScreen(Screen):
             elif kind == "task_done":
                 self._set_status(
                     f"Task {payload['task']} done for {payload['model']}.", "info"
+                )
+            elif kind == "model_start":
+                self.query_one("#current", Static).update(
+                    f"Current: {payload['model']} — starting benchmarks…"
+                )
+            elif kind == "model_done":
+                self.query_one("#current", Static).update(
+                    f"Finished: {payload['model']}"
                 )
             elif kind == "error":
                 log.write_line(
