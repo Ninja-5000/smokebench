@@ -11,8 +11,22 @@ from textual.screen import Screen
 from textual.widgets import Button, Checkbox, Static
 
 from llm_bench.benchmarks import ALL_BENCHMARKS
+from llm_bench.benchmarks.base import Benchmark
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
+
+
+def _benchmark_needs_judge(name: str, custom_benchmarks: list[Benchmark]) -> bool:
+    """Check if a named benchmark uses LLM-as-judge for any sample."""
+    # Check built-in benchmarks
+    for cls in ALL_BENCHMARKS:
+        if cls().name == name:
+            return any(s.grader == "judge" for s in cls().samples)
+    # Check custom benchmarks
+    for cb in custom_benchmarks:
+        if cb.name == name:
+            return any(s.grader == "judge" for s in cb.samples)
+    return False
 
 
 class BenchmarksScreen(Screen):
@@ -27,7 +41,7 @@ class BenchmarksScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Container(
-            Static("4 / 6 — Benchmarks", classes="section-title"),
+            Static("3 / 6 — Benchmarks", classes="section-title"),
             Static(
                 "Toggle the benchmarks you want to run, then add a custom one or "
                 "tune sample counts in Advanced.",
@@ -109,16 +123,16 @@ class BenchmarksScreen(Screen):
             self._refresh_status("Select at least one benchmark.", "error")
             return
         state.selected_benchmarks = chosen
-        # Check if any selected benchmark requires a judge but none is configured
-        judge_only_benchmarks = {"code_explanation", "creative_writing"}
-        selected_judge_benchmarks = [b for b in chosen if b in judge_only_benchmarks]
-        state_judge_configured = state.judge_model is not None or state.use_separate_judge
-        if selected_judge_benchmarks and not state_judge_configured:
-            self._refresh_status(
-                f"These benchmarks need an LLM judge: {', '.join(selected_judge_benchmarks)}. Go back to enable one.",
-                "error",
-            )
-            return
-        from llm_bench.tui.screens.advanced import AdvancedScreen
+        # Route to JudgePicker if any selected benchmark needs LLM judge
+        needs_judge = any(
+            _benchmark_needs_judge(name, state.custom_benchmarks) for name in chosen
+        )
+        judge_configured = state.judge_model is not None or state.use_separate_judge
+        if needs_judge and not judge_configured:
+            from llm_bench.tui.screens.judge_picker import JudgePickerScreen
 
-        self.app.push_screen(AdvancedScreen())
+            self.app.push_screen(JudgePickerScreen())
+        else:
+            from llm_bench.tui.screens.advanced import AdvancedScreen
+
+            self.app.push_screen(AdvancedScreen())

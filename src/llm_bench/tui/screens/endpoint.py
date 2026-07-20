@@ -28,7 +28,7 @@ class EndpointScreen(Screen):
     def compose(self) -> ComposeResult:
         state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
-            Static("1 / 7 — Endpoint", classes="section-title"),
+            Static("1 / 6 — Endpoint", classes="section-title"),
             Grid(
                 Label("Base URL"),
                 Input(

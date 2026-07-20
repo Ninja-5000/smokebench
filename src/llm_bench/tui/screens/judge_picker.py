@@ -121,6 +121,6 @@ class JudgePickerScreen(Screen):
             if not state.judge_model:
                 self._refresh_status("Pick a judge model from the selected list.", "error")
                 return
-        from llm_bench.tui.screens.run import RunScreen
+        from llm_bench.tui.screens.advanced import AdvancedScreen
 
-        self.app.push_screen(RunScreen())
+        self.app.push_screen(AdvancedScreen())
