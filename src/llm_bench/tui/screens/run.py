@@ -112,6 +112,15 @@ class RunScreen(Screen):
         def _make_client(model_id: str):
             return make_client(state.protocol_detected or state.protocol, state.base_url, state.api_key)
 
+        def _make_judge_client(model_id: str):
+            if state.use_separate_judge and state.judge_base_url:
+                return make_client(
+                    state.judge_protocol or "openai",
+                    state.judge_base_url,
+                    state.judge_api_key or "",
+                )
+            return _make_client(model_id)
+
         log = self.query_one("#log", Log)
 
         async def on_event(kind: str, payload: dict) -> None:
@@ -145,6 +154,7 @@ class RunScreen(Screen):
                 make_client=_make_client,
                 pricing=state.pricing,
                 judge_model=state.judge_model,
+                make_judge_client=_make_judge_client,
                 on_event=on_event,
                 max_concurrency=state.max_concurrency,
             )

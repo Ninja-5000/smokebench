@@ -154,6 +154,7 @@ async def run_all(
     make_client: Callable[[str], LLMClient],
     pricing: PricingConfig,
     judge_model: str | None = None,
+    make_judge_client: Callable[[str], LLMClient] | None = None,
     on_event: EventCallback | None = None,
     *,
     max_concurrency: int = 4,
@@ -163,6 +164,7 @@ async def run_all(
 
     for model in models:
         client = make_client(model)
+        judge_client = make_judge_client(model) if make_judge_client else client
         try:
             if on_event is not None:
                 await on_event("model_start", {"model": model})
@@ -172,7 +174,7 @@ async def run_all(
                         bench,
                         model,
                         client,
-                        judge_client=client,
+                        judge_client=judge_client,
                         judge_model=judge_model,
                         on_event=on_event,
                         max_concurrency=max_concurrency,
