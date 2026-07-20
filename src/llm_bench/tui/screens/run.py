@@ -12,6 +12,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Log, ProgressBar, Static
 
 from llm_bench.benchmarks import instantiate
+from llm_bench.benchmarks.base import Benchmark
 from llm_bench.clients.detect import make_client
 from llm_bench.results.recommend import recommend
 from llm_bench.results.report import markdown_report
@@ -62,47 +63,57 @@ class RunScreen(Screen):
 
     def on_mount(self) -> None:
         state: AppState = self.app.state  # type: ignore[attr-defined]
+        self._benchmarks = self._build_benchmarks(state)
+        runnable = [b for b in self._benchmarks if len(b.sliced_samples()) > 0]
+        skipped = [b for b in self._benchmarks if len(b.sliced_samples()) == 0]
         models = ", ".join(state.selected_models)
-        tasks = ", ".join(state.selected_benchmarks)
+        tasks = ", ".join(b.name for b in runnable)
         self.query_one("#summary", Static).update(
             f"Models: {models}\nBenchmarks: {tasks}"
         )
+        for b in skipped:
+            self.query_one("#log", Log).write_line(
+                f"[SKIP] {b.name} has 0 samples — skipping."
+            )
         # Build progress bars: one per (model, task)
         bars = self.query_one("#bars", Vertical)
         for m in state.selected_models:
-            for t in state.selected_benchmarks:
+            for b in runnable:
                 mid = _sanitize_id(m)
                 bars.mount(
-                    Static(f"{m} × {t}", id=f"hdr_{mid}_{t}", classes="help")
+                    Static(f"{m} × {b.name}", id=f"hdr_{mid}_{b.name}", classes="help")
                 )
                 bars.mount(
                     ProgressBar(
-                        total=1, show_eta=False, id=f"bar_{mid}_{t}"
+                        total=max(1, len(b.sliced_samples())), show_eta=False, id=f"bar_{mid}_{b.name}"
                     )
                 )
         self._paused = False
         self._cancelled = False
         self.run_worker(self._run(), exclusive=True)
 
-    async def _run(self) -> None:
-        state: AppState = self.app.state  # type: ignore[attr-defined]
-        # Build benchmarks
-        benchmarks = []
+    def _build_benchmarks(self, state: AppState) -> list[Benchmark]:
+        """Build benchmark instances from state, handling overrides and custom benchmarks."""
+        benchmarks: list[Benchmark] = []
         for name in state.selected_benchmarks:
             n_override = state.sample_overrides.get(name)
             b = instantiate(name, n_samples=n_override)
             if b is None:
-                # Try custom
                 for cb in state.custom_benchmarks:
                     if cb.name == name:
                         benchmarks.append(cb)
                         break
             else:
                 benchmarks.append(b)
+        return benchmarks
+
+    async def _run(self) -> None:
+        state: AppState = self.app.state  # type: ignore[attr-defined]
+        benchmarks = [b for b in self._benchmarks if len(b.sliced_samples()) > 0]
         if not benchmarks:
             self._set_status("No benchmarks to run.", "error")
             return
-        # Set totals on progress bars
+        # Set totals on progress bars (already set in on_mount, but confirm)
         for m in state.selected_models:
             for b in benchmarks:
                 mid = _sanitize_id(m)
