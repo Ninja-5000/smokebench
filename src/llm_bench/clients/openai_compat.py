@@ -54,7 +54,7 @@ class OpenAICompatClient(LLMClient):
                     return False
                 data = resp.json()
                 return bool(data.get("data"))
-        except httpx.HTTPError:
+        except (httpx.HTTPError, ValueError):
             return False
 
     def _payload(self, req: ChatRequest) -> dict[str, Any]:

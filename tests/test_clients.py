@@ -153,3 +153,27 @@ async def test_detect_protocol_picks_anthropic_when_models_endpoint_404() -> Non
         # doesn't raise.
         chosen = await detect_protocol("https://api.example.com/v1", "sk")
     assert chosen in {"openai", "anthropic"}
+
+
+@pytest.mark.asyncio
+async def test_probe_returns_false_on_html_response() -> None:
+    """A 200 OK returning HTML (not JSON) should not crash probe."""
+    from llm_bench.clients.openai_compat import OpenAICompatClient
+
+    client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
+    with respx.mock(base_url="https://api.example.com/v1") as mock:
+        mock.get("/models").mock(return_value=httpx.Response(200, text="<html><body>OK</body></html>"))
+        result = await client.probe()
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_probe_returns_false_on_empty_data() -> None:
+    """A 200 with empty data array should return False."""
+    from llm_bench.clients.openai_compat import OpenAICompatClient
+
+    client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
+    with respx.mock(base_url="https://api.example.com/v1") as mock:
+        mock.get("/models").mock(return_value=httpx.Response(200, json={"data": []}))
+        result = await client.probe()
+    assert result is False
