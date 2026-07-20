@@ -27,6 +27,10 @@ Screen {
     color: $success;
 }
 
+.warning {
+    color: $warning;
+}
+
 DataTable > .datatable--header {
     text-style: bold;
     background: $boost;

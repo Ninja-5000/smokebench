@@ -27,7 +27,7 @@ class BenchmarksScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Container(
-            Static("3 / 6 — Benchmarks", classes="section-title"),
+            Static("4 / 6 — Benchmarks", classes="section-title"),
             Static(
                 "Toggle the benchmarks you want to run, then add a custom one or "
                 "tune sample counts in Advanced.",
@@ -91,17 +91,31 @@ class BenchmarksScreen(Screen):
     def _advance(self) -> None:
         state: AppState = self.app.state
         chosen: list[str] = []
-        for cls in ALL_BENCHMARKS:
-            inst = cls()
-            cb = self.query_one(f"#bench_{inst.name}", Checkbox)
+        boxes = self.query_one("#boxes", Vertical)
+        for cb in boxes.children:
+            if not isinstance(cb, Checkbox):
+                continue
+            if not cb.id or not cb.id.startswith("bench_"):
+                continue
+            name = cb.id[6:]  # strip "bench_"
             if cb.value:
-                chosen.append(inst.name)
+                chosen.append(name)
         for b in state.custom_benchmarks:
             chosen.append(b.name)
         if not chosen:
             self._refresh_status("Select at least one benchmark.", "error")
             return
         state.selected_benchmarks = chosen
-        from llm_bench.tui.screens.judge_picker import JudgePickerScreen
+        # Check if any selected benchmark requires a judge but none is configured
+        judge_only_benchmarks = {"code_explanation", "creative_writing"}
+        selected_judge_benchmarks = [b for b in chosen if b in judge_only_benchmarks]
+        state_judge_configured = state.judge_model is not None or state.use_separate_judge
+        if selected_judge_benchmarks and not state_judge_configured:
+            self._refresh_status(
+                f"These benchmarks need an LLM judge: {', '.join(selected_judge_benchmarks)}. Go back to enable one.",
+                "error",
+            )
+            return
+        from llm_bench.tui.screens.advanced import AdvancedScreen
 
-        self.app.push_screen(JudgePickerScreen())
+        self.app.push_screen(AdvancedScreen())

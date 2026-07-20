@@ -10,7 +10,6 @@ from textual.containers import Container, Grid, Horizontal
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, Select, Static
 
-from llm_bench.clients.detect import detect_protocol
 from llm_bench.discovery import fetch_models
 from llm_bench.tui.state import AppState
 from llm_bench.tui.widgets import HelpBar
@@ -29,7 +28,7 @@ class EndpointScreen(Screen):
     def compose(self) -> ComposeResult:
         state: AppState = self.app.state  # type: ignore[attr-defined]
         yield Container(
-            Static("1 / 6 — Endpoint", classes="section-title"),
+            Static("1 / 7 — Endpoint", classes="section-title"),
             Grid(
                 Label("Base URL"),
                 Input(
@@ -79,7 +78,7 @@ class EndpointScreen(Screen):
         )
 
     def _set_status(self, msg: str, kind: str = "info") -> None:
-        cls = {"info": "", "error": "error", "success": "success"}[kind]
+        cls = {"info": "", "error": "error", "success": "success", "warning": "warning"}[kind]
         widget = self.query_one("#status", Static)
         widget.set_classes(cls)
         widget.update(msg)
@@ -91,15 +90,26 @@ class EndpointScreen(Screen):
             return
         self._set_status("Probing endpoint…", "info")
         try:
-            chosen = await detect_protocol(base_url, api_key) if protocol == "auto" else protocol
             discovery = await fetch_models(base_url, api_key, protocol)
-            count = len(discovery.models)
-            self._set_status(
-                f"Connected. Detected protocol: {chosen}. Found {count} models.",
-                "success",
-            )
         except Exception as e:  # noqa: BLE001
             self._set_status(f"Connection failed: {e}", "error")
+            return
+        count = len(discovery.models)
+        chosen = discovery.protocol
+        if count == 0:
+            # Reachable but either no /models endpoint or empty list. Probe is
+            # the source of truth: fetch_models returns [] when the probe fails
+            # OR when the model list is empty. Either way, don't claim success.
+            self._set_status(
+                f"Reachable (protocol: {chosen}), but no models found at /models. "
+                "Check the URL or add models manually on the next screen.",
+                "warning",
+            )
+        else:
+            self._set_status(
+                f"Connected. Detected protocol: {chosen}. Found {count} model(s).",
+                "success",
+            )
 
     def action_next_screen(self) -> None:
         self._advance()

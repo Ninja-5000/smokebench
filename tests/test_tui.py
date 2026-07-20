@@ -74,3 +74,64 @@ async def test_advanced_screen_saves_sample_overrides() -> None:
         await pilot.pause()
         assert state.sample_overrides[first.name] == 7
         assert state.max_concurrency == 2
+
+
+@pytest.mark.asyncio
+async def test_endpoint_connection_warns_on_empty_models(monkeypatch) -> None:
+    """A bad URL or a non-/models endpoint should not show green 'Connected'."""
+    from llm_bench.discovery import DiscoveryResult
+    from llm_bench.tui.screens.endpoint import EndpointScreen
+
+    async def fake_fetch(base_url, api_key, protocol):
+        return DiscoveryResult(models=[], protocol="openai", used_fallback=False)
+
+    state = AppState()
+    state.base_url = "http://example.com"
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, EndpointScreen)
+        monkeypatch.setattr(
+            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+        )
+        await screen.action_test_connection()
+        await pilot.pause()
+        from textual.widgets import Static
+
+        w = screen.query_one("#status", Static)
+        assert "warning" in w.classes, f"expected warning class, got {w.classes!r}"
+        # Should NOT say "Connected" when no models
+        assert "Connected" not in str(w)
+
+
+@pytest.mark.asyncio
+async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
+    from llm_bench.clients.base import ModelInfo
+    from llm_bench.discovery import DiscoveryResult
+    from llm_bench.tui.screens.endpoint import EndpointScreen
+
+    async def fake_fetch(base_url, api_key, protocol):
+        return DiscoveryResult(
+            models=[ModelInfo(id="gpt-4o"), ModelInfo(id="gpt-4o-mini")],
+            protocol="openai",
+            used_fallback=False,
+        )
+
+    state = AppState()
+    state.base_url = "http://example.com"
+    state.api_key = "sk-test"
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, EndpointScreen)
+        monkeypatch.setattr(
+            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+        )
+        await screen.action_test_connection()
+        await pilot.pause()
+        from textual.widgets import Static
+
+        w = screen.query_one("#status", Static)
+        assert "success" in w.classes, f"expected success class, got {w.classes!r}"

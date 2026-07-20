@@ -26,67 +26,6 @@ class RunResult:
     errors: list[tuple[str, str, str]] = field(default_factory=list)  # (model, task, msg)
 
 
-async def _run_one_sample(
-    benchmark: Benchmark,
-    model: str,
-    judge_model: str | None,
-    bench_client: LLMClient,
-) -> SampleResult:
-    samples = benchmark.sliced_samples()
-    if not samples:
-        return SampleResult(
-            sample_id="<empty>",
-            output="",
-            score=0.0,
-            passed=False,
-            latency_s=0.0,
-            ttft_s=None,
-            input_tokens=0,
-            output_tokens=0,
-            error="no samples",
-        )
-    sample = samples[0]
-    request = benchmark.build_request(sample, model)
-    start = time.perf_counter()
-    ttft: float | None = None
-    output_text = ""
-    in_tok = out_tok = 0
-    err: str | None = None
-    try:
-        # Use streaming for latency tasks, plain chat otherwise.
-        if benchmark.name == "latency":
-            async for chunk in bench_client.stream(request):
-                if chunk.ttft and ttft is None:
-                    ttft = time.perf_counter() - start
-                if chunk.delta:
-                    output_text += chunk.delta
-                if chunk.usage:
-                    in_tok = chunk.usage.input_tokens or in_tok
-                    out_tok = chunk.usage.output_tokens or out_tok
-        else:
-            resp = await bench_client.chat(request)
-            output_text = resp.text
-            in_tok = resp.usage.input_tokens
-            out_tok = resp.usage.output_tokens
-    except Exception as e:  # noqa: BLE001
-        err = f"{type(e).__name__}: {e}"
-    latency = time.perf_counter() - start
-    grade = await benchmark.grade(sample, output_text, client=bench_client, judge_model=judge_model)
-    return SampleResult(
-        sample_id=sample.id,
-        output=output_text,
-        score=grade.score,
-        passed=grade.passed,
-        latency_s=latency,
-        ttft_s=ttft,
-        input_tokens=in_tok,
-        output_tokens=out_tok,
-        detail=grade.detail,
-        error=err,
-        tags=sample.tags,
-    )
-
-
 async def run_benchmark(
     benchmark: Benchmark,
     model: str,
