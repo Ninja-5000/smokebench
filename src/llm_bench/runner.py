@@ -74,6 +74,7 @@ async def run_benchmark(
         except Exception as e:  # noqa: BLE001
             err = f"{type(e).__name__}: {e}"
         latency = time.perf_counter() - start
+        gen_latency = latency - (ttft or 0.0)
         grade = await benchmark.grade(
             sample, output_text, client=grading_client, judge_model=judge_model
         )
@@ -104,8 +105,8 @@ async def run_benchmark(
                     "score": res.score,
                     "latency_s": res.latency_s,
                     "tokens_per_s": (
-                        res.output_tokens / res.latency_s
-                        if res.latency_s > 0 and res.output_tokens
+                        res.output_tokens / gen_latency
+                        if gen_latency > 0 and res.output_tokens
                         else 0.0
                     ),
                 },
@@ -128,7 +129,7 @@ async def run_benchmark(
     else:
         median = p95 = 0.0
     tps_list = [
-        r.output_tokens / r.latency_s
+        r.output_tokens / max(r.latency_s - (r.ttft_s or 0.0), 0.001)
         for r in results
         if r.latency_s > 0 and r.output_tokens
     ]
