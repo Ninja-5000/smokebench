@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from pydantic import SecretStr
 from textual.app import App
 
 from llm_bench.config import CONFIG_PATH, load_config, save_config
@@ -45,6 +46,11 @@ def run(argv: list[str] | None = None) -> int:
         selected_benchmarks=list(cfg.last_benchmarks),
         sample_overrides=dict(cfg.sample_overrides),
         pricing=cfg.pricing,
+        judge_model=cfg.endpoint.judge_model,
+        judge_base_url=cfg.endpoint.judge_base_url,
+        judge_api_key=cfg.endpoint.judge_api_key.get_secret_value() if cfg.endpoint.judge_api_key else None,
+        judge_protocol=cfg.endpoint.judge_protocol,
+        use_separate_judge=cfg.endpoint.use_separate_judge,
     )
     app = LLMBenchApp(state)
     try:
@@ -54,6 +60,12 @@ def run(argv: list[str] | None = None) -> int:
         cfg.endpoint.base_url = state.base_url or cfg.endpoint.base_url
         cfg.endpoint.api_key.set_secret_value(state.api_key) if state.api_key else None
         cfg.endpoint.protocol = state.protocol or cfg.endpoint.protocol
+        cfg.endpoint.judge_model = state.judge_model
+        cfg.endpoint.judge_base_url = state.judge_base_url
+        if state.judge_api_key:
+            cfg.endpoint.judge_api_key = SecretStr(state.judge_api_key)
+        cfg.endpoint.judge_protocol = state.judge_protocol
+        cfg.endpoint.use_separate_judge = state.use_separate_judge
         cfg.last_models = list(state.selected_models)
         cfg.last_benchmarks = list(state.selected_benchmarks)
         cfg.sample_overrides = dict(state.sample_overrides)

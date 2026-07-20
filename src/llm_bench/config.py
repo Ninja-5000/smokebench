@@ -25,6 +25,7 @@ class EndpointConfig(BaseModel):
     judge_api_key: SecretStr | None = None
     judge_protocol: str | None = None
     judge_model: str | None = None
+    use_separate_judge: bool = False
 
 
 class PricingEntry(BaseModel):
