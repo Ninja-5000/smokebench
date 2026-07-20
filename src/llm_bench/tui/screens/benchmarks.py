@@ -50,9 +50,12 @@ class BenchmarksScreen(Screen):
     def on_mount(self) -> None:
         boxes = self.query_one("#boxes", Vertical)
         state: AppState = self.app.state  # type: ignore[attr-defined]
+        # Pre-select all on first visit, then respect user's choices
+        if not state.selected_benchmarks:
+            state.selected_benchmarks = [cls().name for cls in ALL_BENCHMARKS]
         for cls in ALL_BENCHMARKS:
             inst = cls()
-            default = inst.name in (state.selected_benchmarks or []) or not state.selected_benchmarks
+            default = inst.name in state.selected_benchmarks
             boxes.mount(
                 Checkbox(
                     f"{inst.name} — {inst.description}",
