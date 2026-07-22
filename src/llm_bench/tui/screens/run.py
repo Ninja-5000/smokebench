@@ -7,7 +7,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Log, ProgressBar, Static
 
@@ -50,7 +50,7 @@ class RunScreen(Screen):
             Static("5 / 6 — Running", classes="section-title"),
             Static("", id="summary"),
             Static("", id="current", classes="help"),
-            Vertical(id="bars"),
+            VerticalScroll(id="bars"),
             Static("Log:", classes="help"),
             Log(id="log", highlight=False, max_lines=200),
             Static("", id="status"),
@@ -82,7 +82,7 @@ class RunScreen(Screen):
                 f"[SKIP] {b.name} has 0 samples — skipping."
             )
         # Build progress bars: one per (model, task), grouped by model
-        bars = self.query_one("#bars", Vertical)
+        bars = self.query_one("#bars", VerticalScroll)
         for m in state.selected_models:
             mid = _sanitize_id(m)
             bars.mount(

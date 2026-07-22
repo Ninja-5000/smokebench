@@ -71,6 +71,10 @@ class ModelsScreen(Screen):
             )
             state.protocol_detected = discovery.protocol
             state.models = discovery.models
+            state.selected_models = [
+                mid for mid in state.selected_models
+                if mid in {m.id for m in state.models}
+            ]
             state.used_fallback = discovery.used_fallback
         except Exception as e:  # noqa: BLE001
             self._refresh_status(f"Failed to fetch models: {e}", "error")

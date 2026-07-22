@@ -84,9 +84,7 @@ class AdvancedScreen(Screen):
             except ValueError:
                 state.max_concurrency = 4
             self._refresh_status("Saved.", "success")
-            from llm_bench.tui.screens.run import RunScreen
-
-            self.app.push_screen(RunScreen())
+            self.app.pop_screen()
         elif event.button.id == "cancel":
             self.app.pop_screen()
 

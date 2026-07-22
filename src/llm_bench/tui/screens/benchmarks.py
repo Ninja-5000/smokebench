@@ -134,5 +134,6 @@ class BenchmarksScreen(Screen):
             self.app.push_screen(JudgePickerScreen())
         else:
             from llm_bench.tui.screens.advanced import AdvancedScreen
+            from llm_bench.tui.screens.run import RunScreen
 
-            self.app.push_screen(AdvancedScreen())
+            self.app.push_screen(AdvancedScreen(), callback=lambda _: self.app.push_screen(RunScreen()))
