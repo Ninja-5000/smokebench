@@ -52,6 +52,7 @@ class AppConfig(BaseModel):
     last_models: list[str] = Field(default_factory=list)
     last_benchmarks: list[str] = Field(default_factory=list)
     sample_overrides: dict[str, int] = Field(default_factory=dict)
+    max_concurrency: int = 4
 
 
 def load_config(path: Path = CONFIG_PATH) -> AppConfig:

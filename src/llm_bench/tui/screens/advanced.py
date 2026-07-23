@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, Static
 
@@ -30,7 +30,7 @@ class AdvancedScreen(Screen):
                 "concurrency level. Leave blank to use defaults.",
                 classes="help",
             ),
-            Vertical(id="form"),
+            VerticalScroll(id="form"),
             Horizontal(
                 Button("Save", id="save", variant="success"),
                 Button("Cancel", id="cancel", variant="default"),
@@ -42,7 +42,7 @@ class AdvancedScreen(Screen):
 
     def on_mount(self) -> None:
         state: AppState = self.app.state  # type: ignore[attr-defined]
-        form = self.query_one("#form", Vertical)
+        form = self.query_one("#form", VerticalScroll)
         for cls in ALL_BENCHMARKS:
             inst = cls()
             default = state.sample_overrides.get(inst.name, "")

@@ -1,12 +1,21 @@
 Screen {
     align: center middle;
+    background: $surface;
+}
+
+#screen {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1 2;
 }
 
 .endpoint-grid {
     grid-size: 2;
     grid-gutter: 1 2;
-    width: 90%;
-    max-width: 100;
+    width: 100%;
+    height: auto;
+    max-width: 120;
 }
 
 .section-title {
@@ -34,4 +43,37 @@ Screen {
 DataTable > .datatable--header {
     text-style: bold;
     background: $boost;
+}
+
+DataTable {
+    height: 1fr;
+    min-height: 5;
+}
+
+#boxes, #form, #bars {
+    height: 1fr;
+    min-height: 5;
+    overflow-y: auto;
+}
+
+#status {
+    margin: 0 0 1 0;
+}
+
+Horizontal {
+    height: auto;
+}
+
+#actions {
+    height: auto;
+    margin: 1 0;
+}
+
+#summary {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#current {
+    height: auto;
 }

@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Checkbox, Static
 
@@ -47,7 +47,7 @@ class BenchmarksScreen(Screen):
                 "tune sample counts in Advanced.",
                 classes="help",
             ),
-            Vertical(id="boxes"),
+            VerticalScroll(id="boxes"),
             Horizontal(
                 Button("Add custom benchmark", id="add_custom", variant="default"),
                 Button("Advanced (sample counts)", id="advanced", variant="default"),
@@ -62,7 +62,7 @@ class BenchmarksScreen(Screen):
         )
 
     def on_mount(self) -> None:
-        boxes = self.query_one("#boxes", Vertical)
+        boxes = self.query_one("#boxes", VerticalScroll)
         state: AppState = self.app.state  # type: ignore[attr-defined]
         # Pre-select all on first visit, then respect user's choices
         if not state.selected_benchmarks:
@@ -108,7 +108,7 @@ class BenchmarksScreen(Screen):
     def _advance(self) -> None:
         state: AppState = self.app.state
         chosen: list[str] = []
-        boxes = self.query_one("#boxes", Vertical)
+        boxes = self.query_one("#boxes", VerticalScroll)
         for cb in boxes.children:
             if not isinstance(cb, Checkbox):
                 continue
@@ -133,7 +133,6 @@ class BenchmarksScreen(Screen):
 
             self.app.push_screen(JudgePickerScreen())
         else:
-            from llm_bench.tui.screens.advanced import AdvancedScreen
             from llm_bench.tui.screens.run import RunScreen
 
-            self.app.push_screen(AdvancedScreen(), callback=lambda _: self.app.push_screen(RunScreen()))
+            self.app.push_screen(RunScreen())
