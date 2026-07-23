@@ -7,9 +7,9 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
+from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Select, Static
 
 from llm_bench.discovery import fetch_models
 from llm_bench.tui.state import AppState
@@ -27,65 +27,96 @@ class JudgePickerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         state: AppState = self.app.state  # type: ignore[attr-defined]
+        selected = [(m, m) for m in state.selected_models]
         yield Container(
             Static("4 / 6 — Judge", classes="section-title"),
             Static(
-                "Some benchmarks (creative writing, code explanation) use an LLM judge. "
+                "Some benchmarks use an LLM judge for scoring. "
                 "Choose a model to act as judge, or skip.",
                 classes="help",
             ),
-            Vertical(
-                Label("Judge source:"),
-                RadioSet(
-                    RadioButton(
-                        "Use one of the selected models (same endpoint)",
-                        id="use_selected",
-                        value=not state.use_separate_judge and state.judge_model is None,
-                    ),
-                    RadioButton(
-                        "Use a separate endpoint",
-                        id="use_separate",
-                        value=state.use_separate_judge,
-                    ),
-                    RadioButton(
-                        "Skip LLM-as-judge (deterministic only)",
-                        id="skip",
-                        value=state.judge_model is None and state.use_separate_judge,
-                    ),
-                    id="radio",
+            Label("Judge source:"),
+            RadioSet(
+                RadioButton(
+                    "Use one of the selected models (same endpoint)",
+                    id="use_selected",
+                    value=not state.use_separate_judge,
                 ),
-                Label("Selected model (when 'use one of the selected models'):"),
-                Input(
-                    value=state.judge_model or (state.selected_models[0] if state.selected_models else ""),
-                    id="judge_model",
-                    placeholder="model id",
+                RadioButton(
+                    "Use a separate endpoint",
+                    id="use_separate",
+                    value=state.use_separate_judge,
                 ),
-                Label("Separate endpoint URL:"),
+                RadioButton(
+                    "Skip LLM-as-judge (deterministic only)",
+                    id="skip",
+                    value=False,
+                ),
+                id="radio",
+            ),
+            VerticalScroll(
+                Label("Select a judge model:"),
+                Select(
+                    selected,
+                    id="judge_model_sel",
+                    allow_blank=False,
+                ),
+                id="selected_section",
+            ),
+            VerticalScroll(
+                Label("URL:"),
                 Input(
                     value=state.judge_base_url or "",
                     id="judge_url",
                     placeholder="https://api.openai.com/v1",
                 ),
-                Label("Separate endpoint API key:"),
+                Label("API key:"),
                 Input(
                     value=state.judge_api_key or "",
                     id="judge_key",
                     password=True,
                     placeholder="sk-…",
                 ),
+                Button("Test connection", id="test", variant="primary"),
+                Label("Select a judge model from the endpoint:"),
+                Select(
+                    [],
+                    id="judge_model_sep",
+                    prompt="Test connection first…",
+                    allow_blank=True,
+                ),
+                id="separate_section",
+            ),
+            Static(
+                "\u26a0\ufe0f Skipping LLM-as-judge means accuracy scores for creative "
+                "writing and code explanation will use deterministic grading only. "
+                "Results may be less accurate.",
+                id="skip_notice",
+                classes="warning",
             ),
             Static("", id="status"),
             Horizontal(
-                Button("Test connection", id="test", variant="primary"),
-                Button("Next →", id="next", variant="success"),
-                id="actions",
-            ),
-            Horizontal(
                 Button("← Back", id="back", variant="default"),
+                Button("Next →", id="next", variant="success"),
             ),
             HelpBar("Ctrl+T test · Ctrl+N next · Esc back"),
             id="screen",
         )
+
+    def on_mount(self) -> None:
+        self._refresh_visibility()
+
+    def _refresh_visibility(self) -> None:
+        rs = self.query_one("#radio", RadioSet)
+        btn = rs.pressed_button
+        choice = btn.id if btn else "use_selected"
+        self.query_one("#selected_section").display = (choice == "use_selected")
+        self.query_one("#separate_section").display = (choice == "use_separate")
+        self.query_one("#skip_notice").display = (choice == "skip")
+        self.query_one("#test").display = (choice == "use_separate")
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:  # type: ignore[override]
+        self._refresh_visibility()
 
     def _refresh_status(self, msg: str, kind: str = "info") -> None:
         cls = {"info": "", "error": "error", "success": "success", "warning": "warning"}[kind]
@@ -94,17 +125,19 @@ class JudgePickerScreen(Screen):
         w.update(msg)
 
     async def action_test_connection(self) -> None:
+        rs = self.query_one("#radio", RadioSet)
+        btn = rs.pressed_button
+        if not btn or btn.id != "use_separate":
+            self._refresh_status("Test connection is only available for the separate endpoint option.", "warning")
+            return
         judge_url = self.query_one("#judge_url", Input).value.strip()
         judge_key = self.query_one("#judge_key", Input).value.strip()
-        state: AppState = self.app.state  # type: ignore[attr-defined]
-        url = judge_url or state.base_url
-        key = judge_key or state.api_key
-        if not url:
-            self._refresh_status("Enter a URL or configure the main endpoint first.", "error")
+        if not judge_url:
+            self._refresh_status("Enter a separate endpoint URL first.", "error")
             return
-        self._refresh_status("Probing endpoint…", "info")
+        self._refresh_status("Probing separate endpoint…", "info")
         try:
-            discovery = await fetch_models(url, key, "auto")
+            discovery = await fetch_models(judge_url, judge_key, "auto")
         except Exception as e:  # noqa: BLE001
             self._refresh_status(f"Connection failed: {e}", "error")
             return
@@ -118,6 +151,9 @@ class JudgePickerScreen(Screen):
                 "Reachable, but no models found at /models. Check the URL.", "warning",
             )
         else:
+            sep = self.query_one("#judge_model_sep", Select)
+            sep.set_options([(m.id, m.id) for m in discovery.models])
+            sep.allow_blank = False
             self._refresh_status(
                 f"Connected. Found {count} model(s). Protocol: {discovery.protocol}.",
                 "success",
@@ -140,25 +176,30 @@ class JudgePickerScreen(Screen):
     def _advance(self) -> None:
         state: AppState = self.app.state
         rs = self.query_one("#radio", RadioSet)
-        pressed = rs.pressed_button
-        choice = pressed.id if pressed else "use_selected"
+        btn = rs.pressed_button
+        choice = btn.id if btn else "use_selected"
         if choice == "skip":
             state.judge_model = None
             state.use_separate_judge = False
         elif choice == "use_separate":
+            sel = self.query_one("#judge_model_sep", Select)
+            if sel.value is None:
+                self._refresh_status("Test the connection and select a model first.", "error")
+                return
             state.use_separate_judge = True
-            state.judge_base_url = self.query_one("#judge_url", Input).value.strip() or state.base_url
-            state.judge_api_key = self.query_one("#judge_key", Input).value.strip() or state.api_key
-            state.judge_model = self.query_one("#judge_model", Input).value.strip() or None
-            if not state.judge_model:
-                self._refresh_status("Separate judge requires a model id.", "error")
-                return
+            state.judge_base_url = self.query_one("#judge_url", Input).value.strip()
+            state.judge_api_key = self.query_one("#judge_key", Input).value.strip()
+            state.judge_model = str(sel.value)
         else:
-            state.use_separate_judge = False
-            state.judge_model = self.query_one("#judge_model", Input).value.strip() or None
-            if not state.judge_model:
-                self._refresh_status("Pick a judge model from the selected list.", "error")
+            sel = self.query_one("#judge_model_sel", Select)
+            if not state.selected_models:
+                self._refresh_status("No models selected. Go back and pick some models first.", "error")
                 return
+            if sel.value is None:
+                self._refresh_status("Select a model to use as judge.", "error")
+                return
+            state.use_separate_judge = False
+            state.judge_model = str(sel.value)
         from llm_bench.tui.screens.run import RunScreen
 
         self.app.push_screen(RunScreen())

@@ -59,7 +59,7 @@ def run(argv: list[str] | None = None) -> int:
     finally:
         # Persist a few choices for next time.
         cfg.endpoint.base_url = state.base_url or cfg.endpoint.base_url
-        cfg.endpoint.api_key.set_secret_value(state.api_key) if state.api_key else None
+        cfg.endpoint.api_key = SecretStr(state.api_key) if state.api_key else cfg.endpoint.api_key
         cfg.endpoint.protocol = state.protocol or cfg.endpoint.protocol
         cfg.endpoint.judge_model = state.judge_model
         cfg.endpoint.judge_base_url = state.judge_base_url
