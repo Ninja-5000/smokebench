@@ -59,6 +59,7 @@ class JudgePickerScreen(Screen):
                 Select(
                     selected,
                     id="judge_model_sel",
+                    value=state.judge_model if state.judge_model in state.selected_models else None,
                     allow_blank=False,
                 ),
                 id="selected_section",

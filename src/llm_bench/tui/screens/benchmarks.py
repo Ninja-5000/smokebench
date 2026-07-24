@@ -127,8 +127,7 @@ class BenchmarksScreen(Screen):
         needs_judge = any(
             _benchmark_needs_judge(name, state.custom_benchmarks) for name in chosen
         )
-        judge_configured = state.judge_model is not None or state.use_separate_judge
-        if needs_judge and not judge_configured:
+        if needs_judge:
             from llm_bench.tui.screens.judge_picker import JudgePickerScreen
 
             self.app.push_screen(JudgePickerScreen())
