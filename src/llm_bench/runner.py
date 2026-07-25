@@ -13,7 +13,7 @@ from llm_bench.clients.base import LLMClient
 from llm_bench.config import PricingConfig
 from llm_bench.pricing import cost_for
 
-EventKind = str  # "start" | "sample_done" | "task_done" | "model_done" | "error"
+EventKind = str  # "model_start" | "task_start" | "sample_done" | "task_done" | "model_done" | "error"
 EventCallback = Callable[[EventKind, dict], Awaitable[None]]
 
 
@@ -171,6 +171,8 @@ async def run_all(
                 await on_event("model_start", {"model": model})
             for bench in benchmarks:
                 try:
+                    if on_event is not None:
+                        await on_event("task_start", {"task": bench.name, "model": model})
                     score = await run_benchmark(
                         bench,
                         model,
@@ -184,8 +186,6 @@ async def run_all(
                     score.cost_usd = cost_for(model, _usage_from_score(score), pricing)
                     result.by_model_task[(model, bench.name)] = score
                     result.by_model[model].append(score)
-                    if on_event is not None:
-                        await on_event("task_done", {"task": bench.name, "model": model, "n": score.n})
                 except Exception as e:  # noqa: BLE001
                     result.errors.append((model, bench.name, f"{type(e).__name__}: {e}"))
                     if on_event is not None:

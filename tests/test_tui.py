@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 
 import pytest
-from textual.widgets import Button, Input
+from textual.containers import HorizontalScroll
+from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, Static
 
 from llm_bench.app import LLMBenchApp
 from llm_bench.tui.screens.run import _sanitize_id
@@ -163,3 +164,105 @@ async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> 
 
         w = screen.query_one("#status", Static)
         assert "error" in w.classes, f"expected error class, got {w.classes!r}"
+
+
+@pytest.mark.asyncio
+async def test_run_dashboard_has_overall_model_progress_and_live_result_rows(monkeypatch) -> None:
+    """The live dashboard uses one bar per model and appends completed samples."""
+    from llm_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(
+        selected_models=["model-a", "model-b"],
+        selected_benchmarks=["math_reasoning"],
+    )
+    app = LLMBenchApp(state)
+    async with app.run_test(size=(140, 36)) as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        assert len(list(screen.query(ProgressBar))) == 2
+        screen._append_result(
+            {
+                "sample_id": "gsm8k_1",
+                "model": "model-a",
+                "passed": True,
+                "score": 1.0,
+                "latency_s": 1.25,
+                "tokens_per_s": 20.0,
+            }
+        )
+        table = screen.query_one("#live-results", DataTable)
+        assert table.row_count == 1
+        screen._set_model_status("model-a", "Current: math_reasoning")
+        assert "Current" in str(screen.query_one("#model_status_model-a", Static).render())
+
+
+@pytest.mark.asyncio
+async def test_run_dashboard_collapses_secondary_panels_on_narrow_terminals(monkeypatch) -> None:
+    from llm_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"], selected_benchmarks=["math_reasoning"])
+    app = LLMBenchApp(state)
+    async with app.run_test(size=(70, 30)) as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        assert not screen.query_one("#progress-panel", Collapsible).collapsed
+        assert screen.query_one("#results-panel", Collapsible).collapsed
+        assert screen.query_one("#log-panel", Collapsible).collapsed
+        assert screen.query_one("#model-progress").size.height <= 10
+        assert screen.query_one("#run-actions").display
+
+
+@pytest.mark.asyncio
+async def test_run_dashboard_reopens_panels_and_keeps_controls_on_resize(monkeypatch) -> None:
+    from llm_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"], selected_benchmarks=["math_reasoning"])
+    app = LLMBenchApp(state)
+    async with app.run_test(size=(70, 20)) as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        assert screen.query_one("#results-panel", Collapsible).collapsed
+        assert screen.query_one("#run-actions").display
+        await pilot.resize_terminal(140, 36)
+        await pilot.pause()
+        for panel_id in ("#progress-panel", "#results-panel", "#log-panel"):
+            assert not screen.query_one(panel_id, Collapsible).collapsed
+
+
+@pytest.mark.asyncio
+async def test_run_dashboard_medium_layout_has_a_complete_scroll_canvas(monkeypatch) -> None:
+    from llm_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"], selected_benchmarks=["math_reasoning"])
+    app = LLMBenchApp(state)
+    async with app.run_test(size=(100, 30)) as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        scroll = screen.query_one("#dashboard-scroll", HorizontalScroll)
+        assert scroll.virtual_size.width > scroll.size.width
+        for panel_id in ("#progress-panel", "#results-panel", "#log-panel"):
+            assert screen.query_one(panel_id, Collapsible).title

@@ -110,7 +110,10 @@ async def test_run_progress_events() -> None:
         )
     kinds = [k for k, _ in events]
     assert "model_start" in kinds
+    assert "task_start" in kinds
     assert "sample_done" in kinds
     assert "task_done" in kinds
     assert "model_done" in kinds
+    assert kinds.index("model_start") < kinds.index("task_start") < kinds.index("sample_done")
+    assert kinds.count("task_done") == 1
     assert result.errors == []
