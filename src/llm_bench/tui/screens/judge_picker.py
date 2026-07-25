@@ -184,7 +184,7 @@ class JudgePickerScreen(Screen):
             state.use_separate_judge = False
         elif choice == "use_separate":
             sel = self.query_one("#judge_model_sep", Select)
-            if sel.value is None:
+            if sel.is_blank():
                 self._refresh_status("Test the connection and select a model first.", "error")
                 return
             state.use_separate_judge = True
@@ -196,7 +196,7 @@ class JudgePickerScreen(Screen):
             if not state.selected_models:
                 self._refresh_status("No models selected. Go back and pick some models first.", "error")
                 return
-            if sel.value is None:
+            if sel.is_blank():
                 self._refresh_status("Select a model to use as judge.", "error")
                 return
             state.use_separate_judge = False

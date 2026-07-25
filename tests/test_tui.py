@@ -6,7 +6,7 @@ import re
 
 import pytest
 from textual.containers import HorizontalScroll
-from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, Static
+from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, RadioButton, Static
 
 from llm_bench.app import LLMBenchApp
 from llm_bench.tui.screens.run import _sanitize_id
@@ -266,3 +266,55 @@ async def test_run_dashboard_medium_layout_has_a_complete_scroll_canvas(monkeypa
         assert scroll.virtual_size.width > scroll.size.width
         for panel_id in ("#progress-panel", "#results-panel", "#log-panel"):
             assert screen.query_one(panel_id, Collapsible).title
+
+
+@pytest.mark.asyncio
+async def test_judge_picker_requires_a_model_for_a_separate_endpoint() -> None:
+    from llm_bench.tui.screens.judge_picker import JudgePickerScreen
+
+    state = AppState(selected_models=["model-a"])
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(JudgePickerScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, JudgePickerScreen)
+        screen.query_one("#use_separate", RadioButton).value = True
+        await pilot.pause()
+        screen.action_next_screen()
+        await pilot.pause()
+        assert app.screen is screen
+        status = screen.query_one("#status", Static)
+        assert "select a model" in str(status.render()).lower()
+        assert "error" in status.classes
+        assert state.judge_model is None
+
+
+@pytest.mark.asyncio
+async def test_judge_picker_accepts_a_selected_separate_endpoint_model(monkeypatch) -> None:
+    from textual.widgets import Select
+
+    from llm_bench.tui.screens.judge_picker import JudgePickerScreen
+    from llm_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"])
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(JudgePickerScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, JudgePickerScreen)
+        screen.query_one("#use_separate", RadioButton).value = True
+        judge_select = screen.query_one("#judge_model_sep", Select)
+        judge_select.set_options([("separate-judge", "separate-judge")])
+        judge_select.value = "separate-judge"
+        await pilot.pause()
+        screen.action_next_screen()
+        await pilot.pause()
+        assert isinstance(app.screen, RunScreen)
+        assert state.use_separate_judge
+        assert state.judge_model == "separate-judge"
