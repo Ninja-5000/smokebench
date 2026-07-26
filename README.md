@@ -6,7 +6,7 @@
 
 Measure response quality, schema compliance, token throughput, and more on *your* hardware before committing to long runs.
 
-[![PyPI Version](https://img.shields.io/pypi/v/smokebench.svg?color=blue)](https://pypi.org/project/smokebench/)
+[![PyPI Version](https://img.shields.io/pypi/v/smokebench)](https://pypi.org/project/smokebench)
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Built with Textual](https://img.shields.io/badge/built%20with-Textual-ff69b4)](https://textual.textualize.io/)
