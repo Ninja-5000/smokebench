@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from llm_bench.benchmarks import (
+from smoke_bench.benchmarks import (
     ALL_BENCHMARKS,
     CodeGenBenchmark,
     CreativeWritingBenchmark,
@@ -13,8 +13,8 @@ from llm_bench.benchmarks import (
     MathReasonBenchmark,
     instantiate,
 )
-from llm_bench.benchmarks.custom import CustomSpec
-from llm_bench.judging.sandbox import run_python
+from smoke_bench.benchmarks.custom import CustomSpec
+from smoke_bench.judging.sandbox import run_python
 
 
 def test_all_benchmarks_have_samples() -> None:

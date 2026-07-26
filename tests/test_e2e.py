@@ -9,16 +9,16 @@ import httpx
 import pytest
 import respx
 
-from llm_bench.benchmarks import (
+from smoke_bench.benchmarks import (
     CodeGenBenchmark,
     MathReasonBenchmark,
 )
-from llm_bench.clients import OpenAICompatClient
-from llm_bench.config import PricingConfig, PricingEntry
-from llm_bench.results.recommend import recommend
-from llm_bench.results.report import markdown_report, terminal_table
-from llm_bench.results.store import save_result
-from llm_bench.runner import run_all
+from smoke_bench.clients import OpenAICompatClient
+from smoke_bench.config import PricingConfig, PricingEntry
+from smoke_bench.results.recommend import recommend
+from smoke_bench.results.report import markdown_report, terminal_table
+from smoke_bench.results.store import save_result
+from smoke_bench.runner import run_all
 
 
 def _chat_mock(text: str, prompt_tokens: int = 50, completion_tokens: int = 30):
@@ -112,7 +112,7 @@ async def test_full_pipeline_with_two_models(tmp_path: Path) -> None:
     markdown_report(result, out_path=md_path)
     assert md_path.exists()
     text = md_path.read_text()
-    assert "# llm-bench Report" in text
+    assert "# SmokeBench Report" in text
     assert "## Recommendations" in text
 
     # Terminal table rendering

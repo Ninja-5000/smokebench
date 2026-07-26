@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from llm_bench.benchmarks.base import SampleResult, TaskScore
-from llm_bench.results.recommend import recommend
-from llm_bench.runner import RunResult
+from smoke_bench.benchmarks.base import SampleResult, TaskScore
+from smoke_bench.results.recommend import recommend
+from smoke_bench.runner import RunResult
 
 
 def _ts(task: str, n: int = 5, passed: int = 5, mean_score: float = 1.0, tps: float = 30.0, cost: float = 0.01) -> TaskScore:

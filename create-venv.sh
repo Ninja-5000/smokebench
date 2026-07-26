@@ -16,5 +16,5 @@ pip install -e ".[dev,full]"
 
 echo "✅ Dev environment ready."
 echo "Activate with: source .venv/bin/activate"
-echo "Run TUI:       llm-bench"
+echo "Run TUI:       smokebench"
 echo "Run tests:     python -m pytest"

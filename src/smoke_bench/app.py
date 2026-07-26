@@ -1,0 +1,79 @@
+"""Textual application entry point."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+from pydantic import SecretStr
+from textual.app import App
+
+from smoke_bench.config import CONFIG_PATH, load_config, save_config
+from smoke_bench.tui.screens.endpoint import EndpointScreen
+from smoke_bench.tui.state import AppState
+
+
+class LLMBenchApp(App):
+    """Top-level Textual app."""
+
+    TITLE = "smokebench"
+    SUB_TITLE = "LLM benchmarking TUI"
+
+    def __init__(self, state: AppState) -> None:
+        super().__init__()
+        self.state = state
+
+    def on_mount(self) -> None:
+        self.push_screen(EndpointScreen())
+
+
+def _parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="smokebench", description=__doc__)
+    parser.add_argument("--no-tui", action="store_true", help="Reserved for non-TUI use.")
+    return parser.parse_args(argv)
+
+
+def run(argv: list[str] | None = None) -> int:
+    """Launch the TUI. Returns a process exit code."""
+    _ = _parse_args(argv if argv is not None else sys.argv[1:])  # noqa: F841
+    cfg = load_config()
+    state = AppState(
+        base_url=cfg.endpoint.base_url,
+        api_key=cfg.endpoint.api_key.get_secret_value(),
+        protocol=cfg.endpoint.protocol,
+        protocol_detected=cfg.endpoint.protocol,
+        selected_models=list(cfg.last_models),
+        selected_benchmarks=list(cfg.last_benchmarks),
+        sample_overrides=dict(cfg.sample_overrides),
+        max_concurrency=cfg.max_concurrency,
+        pricing=cfg.pricing,
+        judge_model=cfg.endpoint.judge_model,
+        judge_base_url=cfg.endpoint.judge_base_url,
+        judge_api_key=cfg.endpoint.judge_api_key.get_secret_value() if cfg.endpoint.judge_api_key else None,
+        judge_protocol=cfg.endpoint.judge_protocol,
+        use_separate_judge=cfg.endpoint.use_separate_judge,
+    )
+    app = LLMBenchApp(state)
+    try:
+        app.run()
+    finally:
+        # Persist a few choices for next time.
+        cfg.endpoint.base_url = state.base_url or cfg.endpoint.base_url
+        cfg.endpoint.api_key = SecretStr(state.api_key) if state.api_key else cfg.endpoint.api_key
+        cfg.endpoint.protocol = state.protocol or cfg.endpoint.protocol
+        cfg.endpoint.judge_model = state.judge_model
+        cfg.endpoint.judge_base_url = state.judge_base_url
+        if state.judge_api_key:
+            cfg.endpoint.judge_api_key = SecretStr(state.judge_api_key)
+        cfg.endpoint.judge_protocol = state.judge_protocol
+        cfg.endpoint.use_separate_judge = state.use_separate_judge
+        cfg.last_models = list(state.selected_models)
+        cfg.last_benchmarks = list(state.selected_benchmarks)
+        cfg.sample_overrides = dict(state.sample_overrides)
+        cfg.max_concurrency = state.max_concurrency
+        save_config(cfg, CONFIG_PATH)
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(run())

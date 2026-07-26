@@ -6,7 +6,7 @@ import httpx
 import pytest
 import respx
 
-from llm_bench.clients import (
+from smoke_bench.clients import (
     AnthropicCompatClient,
     ChatMessage,
     ChatRequest,
@@ -158,7 +158,7 @@ async def test_detect_protocol_picks_anthropic_when_models_endpoint_404() -> Non
 @pytest.mark.asyncio
 async def test_probe_returns_false_on_html_response() -> None:
     """A 200 OK returning HTML (not JSON) should not crash probe."""
-    from llm_bench.clients.openai_compat import OpenAICompatClient
+    from smoke_bench.clients.openai_compat import OpenAICompatClient
 
     client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
     with respx.mock(base_url="https://api.example.com/v1") as mock:
@@ -170,7 +170,7 @@ async def test_probe_returns_false_on_html_response() -> None:
 @pytest.mark.asyncio
 async def test_probe_returns_false_on_empty_data() -> None:
     """A 200 with empty data array should return False."""
-    from llm_bench.clients.openai_compat import OpenAICompatClient
+    from smoke_bench.clients.openai_compat import OpenAICompatClient
 
     client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
     with respx.mock(base_url="https://api.example.com/v1") as mock:

@@ -8,9 +8,9 @@ import pytest
 from textual.containers import HorizontalScroll
 from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, RadioButton, Static
 
-from llm_bench.app import LLMBenchApp
-from llm_bench.tui.screens.run import _sanitize_id
-from llm_bench.tui.state import AppState
+from smoke_bench.app import LLMBenchApp
+from smoke_bench.tui.screens.run import _sanitize_id
+from smoke_bench.tui.state import AppState
 
 
 @pytest.mark.asyncio
@@ -18,7 +18,7 @@ async def test_app_starts_on_endpoint_screen() -> None:
     app = LLMBenchApp(AppState())
     async with app.run_test() as pilot:
         # Endpoint screen has the "Base URL" label.
-        from llm_bench.tui.screens.endpoint import EndpointScreen
+        from smoke_bench.tui.screens.endpoint import EndpointScreen
 
         await pilot.pause()
         assert isinstance(app.screen, EndpointScreen)
@@ -55,8 +55,8 @@ def test_sanitize_id_is_valid_identifier(raw: str) -> None:
 @pytest.mark.asyncio
 async def test_advanced_screen_saves_sample_overrides() -> None:
     """Regression: ensure the per-benchmark input IDs match between mount and read."""
-    from llm_bench.benchmarks import ALL_BENCHMARKS
-    from llm_bench.tui.screens.advanced import AdvancedScreen
+    from smoke_bench.benchmarks import ALL_BENCHMARKS
+    from smoke_bench.tui.screens.advanced import AdvancedScreen
 
     state = AppState()
     state.selected_benchmarks = [b().name for b in ALL_BENCHMARKS]
@@ -80,8 +80,8 @@ async def test_advanced_screen_saves_sample_overrides() -> None:
 @pytest.mark.asyncio
 async def test_endpoint_connection_warns_on_empty_models(monkeypatch) -> None:
     """A bad URL or a non-/models endpoint should not show green 'Connected'."""
-    from llm_bench.discovery import DiscoveryResult
-    from llm_bench.tui.screens.endpoint import EndpointScreen
+    from smoke_bench.discovery import DiscoveryResult
+    from smoke_bench.tui.screens.endpoint import EndpointScreen
 
     async def fake_fetch(base_url, api_key, protocol):
         return DiscoveryResult(models=[], protocol="openai", used_fallback=False, probe_ok=True)
@@ -94,7 +94,7 @@ async def test_endpoint_connection_warns_on_empty_models(monkeypatch) -> None:
         screen = app.screen
         assert isinstance(screen, EndpointScreen)
         monkeypatch.setattr(
-            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+            "smoke_bench.tui.screens.endpoint.fetch_models", fake_fetch
         )
         await screen.action_test_connection()
         await pilot.pause()
@@ -108,9 +108,9 @@ async def test_endpoint_connection_warns_on_empty_models(monkeypatch) -> None:
 
 @pytest.mark.asyncio
 async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
-    from llm_bench.clients.base import ModelInfo
-    from llm_bench.discovery import DiscoveryResult
-    from llm_bench.tui.screens.endpoint import EndpointScreen
+    from smoke_bench.clients.base import ModelInfo
+    from smoke_bench.discovery import DiscoveryResult
+    from smoke_bench.tui.screens.endpoint import EndpointScreen
 
     async def fake_fetch(base_url, api_key, protocol):
         return DiscoveryResult(
@@ -129,7 +129,7 @@ async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
         screen = app.screen
         assert isinstance(screen, EndpointScreen)
         monkeypatch.setattr(
-            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+            "smoke_bench.tui.screens.endpoint.fetch_models", fake_fetch
         )
         await screen.action_test_connection()
         await pilot.pause()
@@ -142,8 +142,8 @@ async def test_endpoint_connection_succeeds_with_models(monkeypatch) -> None:
 @pytest.mark.asyncio
 async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> None:
     """When probe fails (bad URL), show 'error' not 'warning'."""
-    from llm_bench.discovery import DiscoveryResult
-    from llm_bench.tui.screens.endpoint import EndpointScreen
+    from smoke_bench.discovery import DiscoveryResult
+    from smoke_bench.tui.screens.endpoint import EndpointScreen
 
     async def fake_fetch(base_url, api_key, protocol):
         return DiscoveryResult(models=[], protocol="openai", used_fallback=False, probe_ok=False)
@@ -156,7 +156,7 @@ async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> 
         screen = app.screen
         assert isinstance(screen, EndpointScreen)
         monkeypatch.setattr(
-            "llm_bench.tui.screens.endpoint.fetch_models", fake_fetch
+            "smoke_bench.tui.screens.endpoint.fetch_models", fake_fetch
         )
         await screen.action_test_connection()
         await pilot.pause()
@@ -169,7 +169,7 @@ async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> 
 @pytest.mark.asyncio
 async def test_run_dashboard_has_overall_model_progress_and_live_result_rows(monkeypatch) -> None:
     """The live dashboard uses one bar per model and appends completed samples."""
-    from llm_bench.tui.screens.run import RunScreen
+    from smoke_bench.tui.screens.run import RunScreen
 
     async def do_not_run(self):
         return None
@@ -204,7 +204,7 @@ async def test_run_dashboard_has_overall_model_progress_and_live_result_rows(mon
 
 @pytest.mark.asyncio
 async def test_run_dashboard_collapses_secondary_panels_on_narrow_terminals(monkeypatch) -> None:
-    from llm_bench.tui.screens.run import RunScreen
+    from smoke_bench.tui.screens.run import RunScreen
 
     async def do_not_run(self):
         return None
@@ -226,7 +226,7 @@ async def test_run_dashboard_collapses_secondary_panels_on_narrow_terminals(monk
 
 @pytest.mark.asyncio
 async def test_run_dashboard_reopens_panels_and_keeps_controls_on_resize(monkeypatch) -> None:
-    from llm_bench.tui.screens.run import RunScreen
+    from smoke_bench.tui.screens.run import RunScreen
 
     async def do_not_run(self):
         return None
@@ -249,7 +249,7 @@ async def test_run_dashboard_reopens_panels_and_keeps_controls_on_resize(monkeyp
 
 @pytest.mark.asyncio
 async def test_run_dashboard_medium_layout_has_a_complete_scroll_canvas(monkeypatch) -> None:
-    from llm_bench.tui.screens.run import RunScreen
+    from smoke_bench.tui.screens.run import RunScreen
 
     async def do_not_run(self):
         return None
@@ -270,7 +270,7 @@ async def test_run_dashboard_medium_layout_has_a_complete_scroll_canvas(monkeypa
 
 @pytest.mark.asyncio
 async def test_judge_picker_requires_a_model_for_a_separate_endpoint() -> None:
-    from llm_bench.tui.screens.judge_picker import JudgePickerScreen
+    from smoke_bench.tui.screens.judge_picker import JudgePickerScreen
 
     state = AppState(selected_models=["model-a"])
     app = LLMBenchApp(state)
@@ -294,8 +294,8 @@ async def test_judge_picker_requires_a_model_for_a_separate_endpoint() -> None:
 async def test_judge_picker_accepts_a_selected_separate_endpoint_model(monkeypatch) -> None:
     from textual.widgets import Select
 
-    from llm_bench.tui.screens.judge_picker import JudgePickerScreen
-    from llm_bench.tui.screens.run import RunScreen
+    from smoke_bench.tui.screens.judge_picker import JudgePickerScreen
+    from smoke_bench.tui.screens.run import RunScreen
 
     async def do_not_run(self):
         return None

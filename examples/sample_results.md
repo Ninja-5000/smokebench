@@ -1,4 +1,4 @@
-# Sample llm-bench Report
+# Sample Smokebench Report
 
 _Generated: 2026-07-19T14:30:00_
 

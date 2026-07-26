@@ -10,8 +10,9 @@ dist/
 venv/
 .env
 
-# llm-bench runtime outputs
-llm_bench_results/
+# smokebench runtime outputs
+smokebench_results/
+smokebench.yaml
 
 # Editor
 .vscode/

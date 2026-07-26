@@ -1,6 +1,6 @@
-# llm-bench
+# Smokebench
 
-Comprehensive TUI for benchmarking OpenAI- and Anthropic-compatible LLM endpoints.
+TUI for quick benchmarking of OpenAI- and Anthropic-compatible LLM endpoints.
 
 ## Quick Start
 
@@ -10,7 +10,7 @@ make venv
 source .venv/bin/activate
 
 # 2. Launch the TUI
-llm-bench
+smokebench
 ```
 
 ## TUI Walkthrough
@@ -76,7 +76,7 @@ Tie-breakers: lower latency → lower cost.
 
 ## Pricing (Optional)
 
-Add per-model pricing in `~/.llm-bench.yaml` (auto-created):
+Add per-model pricing in `smokebench.yaml` (auto-created in the project directory):
 
 ```yaml
 pricing:
@@ -91,7 +91,7 @@ pricing:
 
 ## Output Artifacts
 
-Each run creates `./llm_bench_results/run_YYYYMMDD_HHMMSS/`:
+Each run creates `./smokebench_results/run_YYYYMMDD_HHMMSS/`:
 
 ```
 run_20260719_143022/
@@ -105,7 +105,7 @@ run_20260719_143022/
 
 ```bash
 make venv          # create .venv + install
-make test          # pytest (38 tests)
+make test          # pytest
 make lint          # ruff
 make fmt           # ruff --fix
 make run           # launch TUI

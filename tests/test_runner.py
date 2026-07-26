@@ -6,13 +6,13 @@ import httpx
 import pytest
 import respx
 
-from llm_bench.benchmarks import (
+from smoke_bench.benchmarks import (
     CodeGenBenchmark,
     LatencyBenchmark,
     MathReasonBenchmark,
 )
-from llm_bench.clients import OpenAICompatClient
-from llm_bench.runner import run_all
+from smoke_bench.clients import OpenAICompatClient
+from smoke_bench.runner import run_all
 
 
 def _ok_response(content: str = "#### 42", prompt_tokens: int = 5, completion_tokens: int = 3):

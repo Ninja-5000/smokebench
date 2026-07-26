@@ -6,7 +6,7 @@ import httpx
 import pytest
 import respx
 
-from llm_bench.discovery import fetch_models, parse_manual_models
+from smoke_bench.discovery import fetch_models, parse_manual_models
 
 
 @pytest.mark.asyncio

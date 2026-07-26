@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from llm_bench.judging import (
+from smoke_bench.judging import (
     grade_contains,
     grade_cosine_sim,
     grade_exact,

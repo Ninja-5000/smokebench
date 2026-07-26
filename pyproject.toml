@@ -3,13 +3,12 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "llm-bench"
-version = "0.1.0"
-description = "Comprehensive TUI for benchmarking OpenAI/Anthropic-compatible LLM endpoints."
+name = "smokebench"
+version = "1.0.0"
+description = "TUI for benchmarking LLM endpoints (OpenAI/Anthropic-compatible)."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "llm-bench authors" }]
 keywords = ["llm", "benchmark", "tui", "textual", "openai", "anthropic"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -43,10 +42,7 @@ full = [
 ]
 
 [project.scripts]
-llm-bench = "llm_bench.__main__:main"
-
-[project.urls]
-Homepage = "https://example.invalid/llm-bench"
+smokebench = "smoke_bench.__main__:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
