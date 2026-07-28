@@ -126,15 +126,30 @@ Button {
     border: none;
     color: #f1f1f2;
     text-style: bold;
+    padding: 0 1;
+    min-width: 10;
 }
 
 Button:hover, Button:focus {
-    background: #4a4a52;
+    background: #505057;
 }
 
-Button.-primary, Button.-success {
+Button.-primary {
+    background: #8bc34a;
+    color: #161617;
+}
+
+Button.-primary:hover, Button.-primary:focus {
+    background: #a3d85e;
+}
+
+Button.-success {
     background: #a3e635;
     color: #161617;
+}
+
+Button.-success:hover, Button.-success:focus {
+    background: #b5ed4a;
 }
 
 Button.-warning {
@@ -142,9 +157,17 @@ Button.-warning {
     color: #161617;
 }
 
+Button.-warning:hover, Button.-warning:focus {
+    background: #f8c85e;
+}
+
 Button.-error {
     background: #ff6b6b;
     color: #161617;
+}
+
+Button.-error:hover, Button.-error:focus {
+    background: #ff8585;
 }
 
 Checkbox, RadioButton {

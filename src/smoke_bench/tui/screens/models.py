@@ -52,6 +52,7 @@ class ModelsScreen(Screen):
             Horizontal(
                 Button("← Back", id="back", variant="default"),
                 Button("Next →", id="next", variant="success"),
+                id="actions",
             ),
             HelpBar("Space toggle · A all · N none · Ctrl+N next · Esc back"),
             id="screen",
