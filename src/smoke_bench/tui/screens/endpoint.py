@@ -63,7 +63,7 @@ class EndpointScreen(Screen):
                 Button("Next →", id="next", variant="success"),
                 id="actions",
             ),
-            HelpBar("Ctrl+T test · Ctrl+N next · Q quit"),
+            HelpBar("Ctrl+T test · Ctrl+N next · Ctrl+Q quit"),
             id="screen",
         )
 
@@ -71,10 +71,11 @@ class EndpointScreen(Screen):
         self.query_one("#base_url", Input).focus()
 
     def _gather(self) -> tuple[str, str, str]:
+        protocol_value = self.query_one("#protocol", Select).value
         return (
             self.query_one("#base_url", Input).value.strip(),
             self.query_one("#api_key", Input).value.strip(),
-            self.query_one("#protocol", Select).value or "auto",
+            protocol_value if isinstance(protocol_value, str) else "auto",
         )
 
     def _set_status(self, msg: str, kind: str = "info") -> None:
