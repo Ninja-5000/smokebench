@@ -93,7 +93,7 @@ class ModelsScreen(Screen):
             )
 
     def _populate_table(self, filter_text: str = "") -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         table = self.query_one("#table", DataTable)
         table.clear()
         for m in state.models:
@@ -123,7 +123,7 @@ class ModelsScreen(Screen):
             self._populate_table(event.value)
 
     def action_toggle_row(self) -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         table = self.query_one("#table", DataTable)
         if table.row_count == 0:
             return
@@ -141,12 +141,12 @@ class ModelsScreen(Screen):
         self._populate_table(self.query_one("#filter", Input).value)
 
     def action_select_all(self) -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         state.selected_models = [m.id for m in state.models]
         self._populate_table(self.query_one("#filter", Input).value)
 
     def action_select_none(self) -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         state.selected_models = []
         self._populate_table(self.query_one("#filter", Input).value)
 
@@ -156,7 +156,7 @@ class ModelsScreen(Screen):
             if not spec:
                 return
             new_models = parse_manual_models(spec)
-            state: AppState = self.app.state
+            state: AppState = self.app.state # type: ignore[attr-defined]
             existing = {m.id for m in state.models}
             for m in new_models:
                 if m.id not in existing:
@@ -181,7 +181,7 @@ class ModelsScreen(Screen):
         self._advance()
 
     def _advance(self) -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         if not state.selected_models:
             self._refresh_status("Select at least one model to continue.", "error")
             return
