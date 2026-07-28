@@ -64,6 +64,7 @@ class AdvancedScreen(Screen):
 
         children: list = [
             Static("Benchmarks", classes="full-row subsection-title"),
+            Static("\u2500" * 60, classes="full-row"),
             Label("Benchmark", classes="grid-header"),
             Label("Samples", classes="grid-header"),
             Label("Max Tokens", classes="grid-header"),

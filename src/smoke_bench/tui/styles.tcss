@@ -14,6 +14,7 @@ Screen {
     color: #f1f1f4;
     text-style: bold;
     margin-bottom: 1;
+    border-bottom: tall hsl(82.71186, 60%, 30%);
 }
 
 .dashboard-title {
@@ -33,6 +34,7 @@ Screen {
     color: #a3e635;
     text-style: bold;
     padding: 1 0;
+    padding-bottom: 0;
     margin: 0;
 }
 
@@ -63,6 +65,7 @@ Screen {
 
 .full-row {
     column-span: 3;
+    padding-bottom: 0;
 }
 
 .action-row {
