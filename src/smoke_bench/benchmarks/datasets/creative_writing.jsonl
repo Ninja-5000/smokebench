@@ -25,8 +25,8 @@
   },
   {
     "id": "cw_5",
-    "prompt": "Compose a 2-stanza limerick about a clumsy robot trying to bake a cake. Use rhyming couplets (A-A-B-B-A).",
-    "rubric": "1-5. 5 = correct limerick form (2 stanzas, AABBA) + on theme. 3 = theme correct, form approximate. 1 = off.",
+    "prompt": "Compose a 2-stanza poem (4 lines per stanza) about a clumsy robot trying to bake a cake. Use the rhyme scheme A-A-B-B in each stanza.",
+    "rubric": "1-5. 5 = two 4-line stanzas, AABB rhyme scheme in each, on theme. 3 = two stanzas on theme but rhyme scheme approximate. 1 = off-topic or wrong form.",
     "grader": "judge"
   },
   {

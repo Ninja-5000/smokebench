@@ -10,7 +10,7 @@
     "id": "ce_2",
     "prompt": "Explain what this SQL query does:\n\n```sql\nSELECT u.name, COUNT(o.id) AS order_count\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id\nWHERE u.created_at >= '2024-01-01'\nGROUP BY u.id\nHAVING order_count > 5\nORDER BY order_count DESC;\n```",
     "reference": "Returns names of users created on or after 2024-01-01 with more than 5 orders, ordered by order count descending.",
-    "rubric": "Score 1-5 for correctness and clarity. 5 = correct, mentions all clauses (left join, having, order by).",
+    "rubric": "1-5. 5 = correct, mentions all clauses (left join, having, order by). 3 = describes the result correctly but misses at least one clause. 1 = wrong or fundamentally misunderstands the query.",
     "grader": "judge"
   },
   {
@@ -24,7 +24,7 @@
     "id": "ce_4",
     "prompt": "Explain the time and space complexity of the following algorithm:\n\n```python\ndef sort_colors(colors):\n    counts = [0, 0, 0]\n    for c in colors:\n        counts[c] += 1\n    i = 0\n    for n, c in enumerate(counts):\n        for _ in range(c):\n            colors[i] = n\n            i += 1\n```",
     "reference": "O(n) time and O(1) extra space (counts array is bounded by the value range). It's counting sort for small integer keys.",
-    "rubric": "1-5. 5 = O(n) time + O(1) space + identifies counting sort. 3 = O(n) time only.",
+    "rubric": "1-5. 5 = states O(n) time and O(1) extra space with correct reasoning. 3 = states O(n) time but gets space wrong or vice versa. 1 = wrong on both.",
     "grader": "judge"
   },
   {
@@ -59,7 +59,7 @@
     "id": "ce_9",
     "prompt": "Explain the difference between `==` and `===` in JavaScript in 1-2 sentences.",
     "reference": "`==` performs type coercion before comparison; `===` requires both value and type to match (strict equality).",
-    "rubric": "1-5. 5 = coercion vs strict. 1 = wrong.",
+    "rubric": "1-5. 5 = clearly distinguishes coercion (==) from strict equality (===). 3 = partial answer, e.g. only explains one operator. 1 = wrong.",
     "grader": "judge"
   },
   {

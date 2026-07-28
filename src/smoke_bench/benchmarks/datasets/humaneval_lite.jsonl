@@ -86,7 +86,7 @@
   {
     "id": "he_15",
     "prompt": "Write a Python function `anagram_check(a, b)` that returns True if the two strings are anagrams of each other (case-insensitive, ignoring spaces).",
-    "test_code": "assert anagram_check('listen', 'silent') is True\nassert anagram_check('Hello', 'olleh') is False  # case-insensitive but same length\nassert anagram_check('Conversation', 'voices rant on') is True\nassert anagram_check('abc', 'def') is False\n",
+    "test_code": "assert anagram_check('listen', 'silent') is True\nassert anagram_check('Hello', 'World') is False\nassert anagram_check('Conversation', 'voices rant on') is True\nassert anagram_check('abc', 'def') is False\n",
     "grader": "sandbox"
   }
 ]
