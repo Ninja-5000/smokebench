@@ -180,6 +180,14 @@ DataTable > .datatable--cursor {
     overflow-y: auto;
 }
 
+#form.endpoint-grid {
+    layout: grid;
+    grid-size: 2;
+    grid-columns: auto 1fr;
+    grid-rows: auto;
+    grid-gutter: 2 1;
+}
+
 #status {
     margin: 0 0 1 0;
 }
@@ -190,7 +198,7 @@ Horizontal {
 
 #actions {
     height: auto;
-    margin: 1 0;
+    margin: 0 0;
 }
 
 #summary, #current {
