@@ -29,6 +29,81 @@ Screen {
 .success { color: #a3e635; }
 .warning { color: #f6b73c; }
 
+.subsection-title {
+    color: #a3e635;
+    text-style: bold;
+    padding: 1 0;
+    margin: 0;
+}
+
+/* ── Advanced screen grid layout ─────────────────────────── */
+
+#advanced-scroll {
+    height: 1fr;
+    min-height: 5;
+}
+
+.advanced-grid {
+    layout: grid;
+    grid-size: 3;
+    grid-columns: 3fr 1fr 1fr;
+    grid-gutter: 0 1;
+    height: auto;
+}
+
+.advanced-grid .field-input {
+    min-width: 8;
+}
+
+.grid-header {
+    color: #a3e635;
+    text-style: bold;
+    padding: 0;
+}
+
+.full-row {
+    column-span: 3;
+}
+
+.action-row {
+    height: auto;
+    margin: 1 0 0 0;
+}
+
+/* ── Input + inline reset button wrapper ─────────────────── */
+
+.input-wrap {
+    height: auto;
+}
+
+.input-wrap .field-input {
+    width: 1fr;
+    min-width: 8;
+}
+
+.input-wrap .reset-inside {
+    width: 3;
+    min-width: 3;
+    height: 3;
+    background: transparent;
+    border: none;
+    color: #63636c;
+    margin-left: -1;
+    padding: 0;
+}
+
+.input-wrap .reset-inside:hover {
+    color: #a3e635;
+    background: transparent;
+}
+
+/* ── Global settings labels ──────────────────────────────── */
+
+.global-label {
+    color: #c5c5ca;
+    padding: 0 1 0 0;
+}
+
 Label {
     color: #c5c5ca;
 }
