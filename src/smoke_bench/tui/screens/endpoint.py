@@ -84,56 +84,56 @@ class EndpointScreen(Screen):
         widget.set_classes(cls)
         widget.update(msg)
 
-    async def action_test_connection(self) -> None:
+    async def _probe(self):
+        """Test the endpoint connection and return the discovery result."""
         base_url, api_key, protocol = self._gather()
         if not base_url:
             self._set_status("Base URL is required.", "error")
-            return
+            return None
         self._set_status("Probing endpoint…", "info")
         try:
             discovery = await fetch_models(base_url, api_key, protocol)
         except Exception as e:  # noqa: BLE001
             self._set_status(f"Connection failed: {e}", "error")
-            return
+            return None
         count = len(discovery.models)
         chosen = discovery.protocol
         if not discovery.probe_ok:
             self._set_status(
                 "Connection failed. Check the URL and try again.", "error",
             )
-        elif count == 0:
-            # Reachable but either no /models endpoint or empty list. Probe is
-            # the source of truth: fetch_models returns [] when the probe fails
-            # OR when the model list is empty. Either way, don't claim success.
+            return None
+        if count == 0:
             self._set_status(
                 f"Reachable (protocol: {chosen}), but no models found at /models. "
                 "Check the URL or add models manually on the next screen.",
                 "warning",
             )
-        else:
-            self._set_status(
-                f"Connected. Detected protocol: {chosen}. Found {count} model(s).",
-                "success",
-            )
+            return None
+        self._set_status(
+            f"Connected. Detected protocol: {chosen}. Found {count} model(s).",
+            "success",
+        )
+        return discovery
+
+    async def action_test_connection(self) -> None:
+        await self._probe()
 
     def action_next_screen(self) -> None:
-        self._advance()
+        self.run_worker(self._advance(), exclusive=False)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:  # type: ignore[override]
         if event.button.id == "test":
             self.run_worker(self.action_test_connection(), exclusive=False)
         elif event.button.id == "next":
-            self._advance()
+            self.run_worker(self._advance(), exclusive=False)
 
-    def _advance(self) -> None:
-        base_url, api_key, protocol = self._gather()
-        if not base_url:
-            self._set_status("Base URL is required.", "error")
+    async def _advance(self) -> None:
+        discovery = await self._probe()
+        if discovery is None:
             return
         state: AppState = self.app.state  # type: ignore[attr-defined]
-        state.base_url = base_url
-        state.api_key = api_key
-        state.protocol = protocol
+        state.base_url, state.api_key, state.protocol = self._gather()
         from smoke_bench.tui.screens.models import ModelsScreen
 
         self.app.push_screen(ModelsScreen())
