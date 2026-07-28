@@ -19,8 +19,8 @@ class CodeGenBenchmark(Benchmark):
     name = "code_generation"
     description = "HumanEval-lite: write a function, run hidden unit tests in a sandbox."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

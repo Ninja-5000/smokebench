@@ -57,8 +57,8 @@ class CustomBenchmark(Benchmark):
     name = "custom"
     description = "User-defined benchmark loaded from a YAML/JSON file or in-memory spec."
 
-    def __init__(self, spec: CustomSpec, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, spec: CustomSpec, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
         self._spec = spec
         self.name = spec.name
         self.description = spec.description

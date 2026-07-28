@@ -31,6 +31,8 @@ class AppState:
 
     max_concurrency: int = 4
     sample_overrides: dict[str, int] = field(default_factory=dict)
+    token_overrides: dict[str, int] = field(default_factory=dict)
+    global_max_tokens: int = 4096
 
     # Pricing (loaded later)
     pricing: Any = None

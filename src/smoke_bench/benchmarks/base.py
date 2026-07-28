@@ -79,8 +79,15 @@ class Benchmark(ABC):
     name: str = "abstract"
     description: str = ""
 
-    def __init__(self, n_samples: int | None = None) -> None:
+    def __init__(
+        self,
+        n_samples: int | None = None,
+        max_tokens_override: int | None = None,
+        global_max_tokens: int | None = None,
+    ) -> None:
         self.n_samples_override = n_samples
+        self.max_tokens_override = max_tokens_override
+        self.global_max_tokens = global_max_tokens or 4096
 
     @property
     @abstractmethod
@@ -158,8 +165,11 @@ class Benchmark(ABC):
         if sample.system:
             kwargs["system"] = sample.system
         kwargs.update(sample.request_kwargs)
+        # Apply per-benchmark token override (from UI) over the sample's own value.
+        if self.max_tokens_override is not None:
+            kwargs["max_tokens"] = self.max_tokens_override
         # Sensible defaults.
-        kwargs.setdefault("max_tokens", 1024)
+        kwargs.setdefault("max_tokens", self.global_max_tokens)
         kwargs.setdefault("temperature", 0.0)
         if sample.grader == "json_schema":
             kwargs["json_mode"] = True

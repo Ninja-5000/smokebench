@@ -14,8 +14,8 @@ class CodeExplainBenchmark(Benchmark):
     name = "code_explanation"
     description = "Explain a code snippet. LLM-as-judge on a 1-5 rubric."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

@@ -18,8 +18,8 @@ class SummarizationBenchmark(Benchmark):
     name = "summarization"
     description = "Summarize a passage; graded by ROUGE-L F1 against a reference."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

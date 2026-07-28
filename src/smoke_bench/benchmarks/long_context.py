@@ -83,8 +83,8 @@ class LongContextBenchmark(Benchmark):
     name = "long_context"
     description = "Needle-in-a-haystack: extract a planted fact at varying context sizes."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
         self._samples: list[Sample] | None = None
 
     @property

@@ -44,8 +44,8 @@ class MathReasonBenchmark(Benchmark):
     name = "math_reasoning"
     description = "GSM8K-style word problems; score by extracting the final number."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

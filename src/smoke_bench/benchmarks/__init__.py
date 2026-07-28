@@ -42,11 +42,20 @@ def benchmark_by_name(name: str) -> type[Benchmark] | None:
     return None
 
 
-def instantiate(name: str, n_samples: int | None = None) -> Benchmark | None:
+def instantiate(
+    name: str,
+    n_samples: int | None = None,
+    max_tokens_override: int | None = None,
+    global_max_tokens: int | None = None,
+) -> Benchmark | None:
     cls = benchmark_by_name(name)
     if cls is None:
         return None
-    return cls(n_samples=n_samples)
+    return cls(
+        n_samples=n_samples,
+        max_tokens_override=max_tokens_override,
+        global_max_tokens=global_max_tokens,
+    )
 
 
 __all__ = [

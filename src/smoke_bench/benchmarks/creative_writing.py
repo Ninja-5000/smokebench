@@ -14,8 +14,8 @@ class CreativeWritingBenchmark(Benchmark):
     name = "creative_writing"
     description = "Short creative pieces; LLM-judge on a 1-5 rubric."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

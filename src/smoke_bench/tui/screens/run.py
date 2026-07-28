@@ -164,7 +164,13 @@ class RunScreen(Screen):
         benchmarks: list[Benchmark] = []
         for name in state.selected_benchmarks:
             override = state.sample_overrides.get(name)
-            benchmark = instantiate(name, n_samples=override)
+            token_override = state.token_overrides.get(name)
+            benchmark = instantiate(
+                name,
+                n_samples=override,
+                max_tokens_override=token_override,
+                global_max_tokens=state.global_max_tokens,
+            )
             if benchmark is not None:
                 benchmarks.append(benchmark)
                 continue

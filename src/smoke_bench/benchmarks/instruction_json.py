@@ -14,8 +14,8 @@ class InstructionJSONBenchmark(Benchmark):
     name = "instruction_json"
     description = "Follow structured instructions and emit JSON that validates against a schema."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
 
     @property
     def samples(self) -> list[Sample]:

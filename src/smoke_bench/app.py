@@ -45,6 +45,8 @@ def run(argv: list[str] | None = None) -> int:
         selected_models=list(cfg.last_models),
         selected_benchmarks=list(cfg.last_benchmarks),
         sample_overrides=dict(cfg.sample_overrides),
+        token_overrides=dict(cfg.token_overrides),
+        global_max_tokens=cfg.global_max_tokens,
         max_concurrency=cfg.max_concurrency,
         pricing=cfg.pricing,
         judge_model=cfg.endpoint.judge_model,
@@ -70,6 +72,8 @@ def run(argv: list[str] | None = None) -> int:
         cfg.last_models = list(state.selected_models)
         cfg.last_benchmarks = list(state.selected_benchmarks)
         cfg.sample_overrides = dict(state.sample_overrides)
+        cfg.token_overrides = dict(state.token_overrides)
+        cfg.global_max_tokens = state.global_max_tokens
         cfg.max_concurrency = state.max_concurrency
         save_config(cfg, CONFIG_PATH)
     return 0
