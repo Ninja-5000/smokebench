@@ -29,7 +29,7 @@ class ChatMessage:
 class ChatRequest:
     model: str
     messages: list[ChatMessage]
-    max_tokens: int = 1024
+    max_tokens: int = 4096
     temperature: float = 0.0
     system: str | None = None
     json_mode: bool = False

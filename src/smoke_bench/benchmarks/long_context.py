@@ -101,7 +101,7 @@ class LongContextBenchmark(Benchmark):
                     prompt=prompt,
                     expected="BLUEBIRD-7421",
                     grader="contains",
-                    request_kwargs={"max_tokens": 64, "temperature": 0.0},
+                    request_kwargs={"max_tokens": 512, "temperature": 0.0},
                     tags={"context_words": n_words, "context_label": cfg.label},
                 )
             )

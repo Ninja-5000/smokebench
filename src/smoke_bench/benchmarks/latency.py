@@ -24,15 +24,15 @@ class LatencyBenchmark(Benchmark):
     name = "latency"
     description = "TTFT, total latency, output tokens/sec over fixed short prompts."
 
-    def __init__(self, n_samples: int | None = None) -> None:
-        super().__init__(n_samples)
+    def __init__(self, n_samples: int | None = None, **kwargs: object) -> None:
+        super().__init__(n_samples, **kwargs)
         self._all_samples: list[Sample] = [
             Sample(
                 id=f"lat_{i+1}",
                 prompt=p,
                 grader="contains",
                 expected="1",
-                request_kwargs={"max_tokens": 128, "temperature": 0.0},
+                request_kwargs={"max_tokens": 1024, "temperature": 0.0},
             )
             for i, p in enumerate(_PROMPTS)
         ]

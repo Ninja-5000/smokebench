@@ -28,7 +28,7 @@ class CodeExplainBenchmark(Benchmark):
                     grader=d.get("grader", "judge"),
                     reference=d.get("reference"),
                     rubric=d.get("rubric"),
-                    request_kwargs={"max_tokens": 512, "temperature": 0.0},
+                    request_kwargs={"max_tokens": 2048, "temperature": 0.0},
                 )
             )
         return out

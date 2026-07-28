@@ -31,7 +31,7 @@ class SummarizationBenchmark(Benchmark):
                     prompt=_INSTRUCTION + d["source"],
                     expected=d["reference"],
                     grader="rouge_l",
-                    request_kwargs={"max_tokens": 256, "temperature": 0.0},
+                    request_kwargs={"max_tokens": 2048, "temperature": 0.0},
                 )
             )
         return out

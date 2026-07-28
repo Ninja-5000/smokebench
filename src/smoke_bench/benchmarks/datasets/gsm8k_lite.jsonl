@@ -4,139 +4,139 @@
     "prompt": "Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?",
     "expected": "72",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_2",
     "prompt": "Weng earns $12 an hour for babysitting. Yesterday, she just did 50 minutes of babysitting. How much did she earn?",
     "expected": "10",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_3",
     "prompt": "Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet?",
     "expected": "5",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_4",
     "prompt": "Julie is reading a 120-page book. Yesterday, she was able to read 12 pages and today, she read twice as many pages as yesterday. If she wants to read half of the remaining pages tomorrow, how many pages should she read?",
-    "expected": "54",
+    "expected": "42",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_5",
     "prompt": "James writes a 3-page letter to 2 different friends twice a week. How many pages does he write a year?",
     "expected": "624",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_6",
     "prompt": "Mark has a garden with flowers. He planted plants in three rows. 20 in the first row, 40 in the second row, and 70 in the third row. How many plants did Mark plant in total?",
     "expected": "130",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_7",
     "prompt": "Albert is wondering if he has enough room in his truck for his furniture. His truck has a cargo area 8 feet long, 4 feet wide, and 6 feet tall. Each of his boxes is 2 feet long, 2 feet wide, and 3 feet tall. How many boxes can he fit in his truck?",
     "expected": "16",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_8",
     "prompt": "Ken created a care package to send to his brother, who was away at boarding school. Ken placed a box on a scale, and then he poured into the box enough jelly beans to bring the weight to 2 pounds. Then, he added enough brownies to cause the weight to triple. Next, he added another 2 pounds of jelly beans. And finally, he added enough gummy worms to double the weight once again. What was the final weight of the box of goodies, in pounds?",
     "expected": "16",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_9",
     "prompt": "Alexis is applying for a new job and bought a new set of business clothes to wear to the interview. She went to a department store with a budget of $200 and spent $30 on a button-up shirt, $46 on suit pants, $38 on a suit coat, $11 on socks, and $18 on a belt. She also purchased a pair of shoes, but lost the receipt. She has $16 left from her budget. How much did Alexis pay for the shoes?",
     "expected": "41",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_10",
     "prompt": "Tina makes $18 an hour. If she works more than 8 hours per shift, she is eligible for overtime, which is paid by your hourly wage + 1/2 your hourly wage. If she works 10 hours every day for 5 days, how much money does she make?",
     "expected": "1170",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_11",
     "prompt": "A candle melts by 2 centimeters every hour that it burns. How many centimeters shorter will a candle be after burning from 1:00 PM to 5:00 PM?",
     "expected": "8",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_12",
     "prompt": "Kyle bought last year's best-selling game for $40. The price of the best-selling game this year is 30% higher. If Kyle also bought this year's best-selling game, how much did he pay in total for both games?",
     "expected": "92",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_13",
     "prompt": "Marianne was 14 years old when she moved to a new city. She is now 17 years old. How many years has she lived in the new city?",
     "expected": "3",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 256}
+    "request_kwargs": {"max_tokens": 2048}
   },
   {
     "id": "gsm8k_14",
     "prompt": "The ratio of Jenny's pencils to Marcus's pencils is 12:8. If Jenny has 36 pencils, how many does Marcus have?",
     "expected": "24",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 256}
+    "request_kwargs": {"max_tokens": 2048}
   },
   {
     "id": "gsm8k_15",
     "prompt": "A farmer has 50 chickens. Each chicken lays 2 eggs per day. After collecting the eggs, the farmer sells them in cartons of 12. How many full cartons can the farmer fill per day?",
     "expected": "8",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 256}
+    "request_kwargs": {"max_tokens": 2048}
   },
   {
     "id": "gsm8k_16",
     "prompt": "A library has 8 shelves. Each shelf has 30 books. If 45 books are checked out, how many books remain on the shelves?",
     "expected": "195",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 256}
+    "request_kwargs": {"max_tokens": 2048}
   },
   {
     "id": "gsm8k_17",
     "prompt": "Tom is 6 years older than his sister. In 4 years he will be twice her age. How old is Tom now?",
     "expected": "8",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_18",
     "prompt": "If 3 machines can produce 9 widgets in 6 minutes, how many widgets can 5 machines produce in 12 minutes?",
     "expected": "30",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_19",
     "prompt": "A pool has a capacity of 6000 gallons. It is being filled by two pipes. One fills at 5 gallons/minute, the other at 3 gallons/minute. The pool currently has 2400 gallons. How many minutes until the pool is full?",
     "expected": "450",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   },
   {
     "id": "gsm8k_20",
     "prompt": "A car travels 60 miles per hour for 2 hours and then 40 miles per hour for 3 hours. What is the average speed in mph for the entire trip?",
     "expected": "48",
     "grader": "regex",
-    "request_kwargs": {"max_tokens": 512}
+    "request_kwargs": {"max_tokens": 4096}
   }
 ]

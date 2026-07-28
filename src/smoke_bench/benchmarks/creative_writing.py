@@ -27,7 +27,7 @@ class CreativeWritingBenchmark(Benchmark):
                     prompt=d["prompt"],
                     grader=d.get("grader", "judge"),
                     rubric=d.get("rubric"),
-                    request_kwargs={"max_tokens": 512, "temperature": 0.7},
+                    request_kwargs={"max_tokens": 4096, "temperature": 0.7},
                 )
             )
         return out

@@ -27,7 +27,7 @@ class InstructionJSONBenchmark(Benchmark):
                     prompt=d["prompt"],
                     grader=d.get("grader", "json_schema"),
                     schema=d.get("schema"),
-                    request_kwargs={"max_tokens": 512, "temperature": 0.0},
+                    request_kwargs={"max_tokens": 2048, "temperature": 0.0},
                 )
             )
         return out

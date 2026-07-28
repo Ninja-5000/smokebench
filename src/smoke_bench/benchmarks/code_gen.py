@@ -32,7 +32,7 @@ class CodeGenBenchmark(Benchmark):
                     prompt=_INSTRUCTION + "\n\n" + d["prompt"],
                     grader="sandbox",
                     test_code=d["test_code"],
-                    request_kwargs={"max_tokens": 1024, "temperature": 0.0},
+                    request_kwargs={"max_tokens": 8192, "temperature": 0.0},
                 )
             )
         return out
