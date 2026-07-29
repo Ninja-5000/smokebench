@@ -16,7 +16,7 @@ from smoke_bench.judging import (
 
 def test_grade_exact() -> None:
     assert grade_exact("42", "42").passed
-    assert grade_exact("42 ", "42", case_sensitive=False).passed is not False  # default
+    assert grade_exact("42 ", "42", case_sensitive=False).passed
     assert not grade_exact("43", "42").passed
 
 

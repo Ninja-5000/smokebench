@@ -28,8 +28,6 @@ def _ok_response(content: str = "#### 42", prompt_tokens: int = 5, completion_to
 @pytest.mark.asyncio
 async def test_run_math_benchmark() -> None:
     with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
-        # All 3 samples in MathReasonBenchmark have different expected values,
-        # so mock a "match the last one" response. We verify n=3 and at least 1 pass.
         mock.post("/chat/completions").mock(return_value=_ok_response("The answer is 72\n#### 72"))
         def client_factory(model):  # noqa: E731
             return OpenAICompatClient("https://api.example.com/v1", "sk-test")
@@ -43,7 +41,6 @@ async def test_run_math_benchmark() -> None:
     assert ("m1", "math_reasoning") in result.by_model_task
     score = result.by_model_task[("m1", "math_reasoning")]
     assert score.n == 3
-    # At least the first sample (gsm8k_1) expects 72 — so 1 of 3 should pass.
     assert score.passed >= 1
 
 
@@ -88,7 +85,6 @@ async def test_run_latency_uses_streaming() -> None:
         )
     score = result.by_model_task[("m1", "latency")]
     assert score.n == 2
-    # Some samples may not contain "1" — grader is contains("1") on a "1\n2\n" output.
     assert score.passed >= 1
 
 
@@ -100,7 +96,7 @@ async def test_run_progress_events() -> None:
         events.append((kind, payload))
 
     with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
-        mock.post("/chat/completions").mock(return_value=_ok_response("#### 5"))
+        mock.post("/chat/completions").mock(return_value=_ok_response("The answer is 72\n#### 72"))
         result = await run_all(
             models=["m1"],
             benchmarks=[MathReasonBenchmark(n_samples=2)],
@@ -117,3 +113,5 @@ async def test_run_progress_events() -> None:
     assert kinds.index("model_start") < kinds.index("task_start") < kinds.index("sample_done")
     assert kinds.count("task_done") == 1
     assert result.errors == []
+    score = result.by_model_task[("m1", "math_reasoning")]
+    assert score.passed >= 1

@@ -46,29 +46,13 @@ def _stream_mock(chunks: list[str], prompt_tokens: int = 5, completion_tokens: i
 
 @pytest.mark.asyncio
 async def test_full_pipeline_with_two_models(tmp_path: Path) -> None:
-    """Run math + code + summarization on two mock models and verify the
-    recommendation + report can be generated."""
-    # Two models: m1 always answers 72, m2 always answers wrong.
-    _ = {
-        "/chat/completions": _chat_mock("The answer is 72\n#### 72"),
-    }
-    _ = {
-        "/chat/completions": _chat_mock("I do not know."),
-    }
-
+    """Run math + code on two mock models and verify the recommendation +
+    report can be generated."""
     with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
-        # Use side_effect to vary response per call.
         call_count = {"n": 0}
 
         def side_effect(request):
             call_count["n"] += 1
-            # Alternate responses: even calls = m1, odd = m2
-            _ = str(request.url)
-            # We need a way to know which model is calling — but respx mocks
-            # are at the URL level, not per-client. Use a single rotating
-            # sequence instead. The runner builds separate clients per model,
-            # but they all hit the same URL — so we have to rely on call order
-            # being deterministic (one model after another).
             return _chat_mock("#### 72" if call_count["n"] % 2 == 1 else "wrong")
 
         mock.post("/chat/completions").mock(side_effect=side_effect)
@@ -91,10 +75,11 @@ async def test_full_pipeline_with_two_models(tmp_path: Path) -> None:
 
     assert ("m1", "math_reasoning") in result.by_model_task
     assert ("m2", "math_reasoning") in result.by_model_task
-    # m1 should beat m2 on math (m1 returns 72, the first sample expects 72)
     s1 = result.by_model_task[("m1", "math_reasoning")]
     s2 = result.by_model_task[("m2", "math_reasoning")]
-    assert s1.passed >= s2.passed
+    assert s1.passed == 1
+    assert s2.passed == 0
+    assert s1.passed > s2.passed
 
     # Cost is computed
     assert s1.cost_usd > 0

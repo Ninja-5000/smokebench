@@ -142,17 +142,27 @@ async def test_anthropic_stream() -> None:
 
 
 @pytest.mark.asyncio
-async def test_detect_protocol_picks_anthropic_when_models_endpoint_404() -> None:
+async def test_detect_protocol_prefers_anthropic_when_models_endpoint_returns_models() -> None:
+    """When /models returns any model, detect_protocol should prefer ``anthropic``
+    because it probes the Anthropic client first."""
     with respx.mock(base_url="https://api.example.com/v1") as mock:
-        # OpenAI /models returns 200 (probed first by detect)
-        mock.get("/models").mock(return_value=httpx.Response(200, json={"data": []}))
-        # Anthropic /models returns 200
-        mock.get("/models").mock(return_value=httpx.Response(200, json={"data": [{"id": "claude"}]}))
-        # Because we hit the same URL, just override order by only allowing openai 200 once.
-        # Real-world detect hits both with separate base URLs. Here we just verify it
-        # doesn't raise.
+        mock.get("/models").mock(
+            return_value=httpx.Response(200, json={"data": [{"id": "claude"}]})
+        )
         chosen = await detect_protocol("https://api.example.com/v1", "sk")
-    assert chosen in {"openai", "anthropic"}
+    assert chosen == "anthropic"
+
+
+@pytest.mark.asyncio
+async def test_detect_protocol_falls_back_to_openai_when_models_endpoint_returns_empty() -> None:
+    """When /models returns 200 with an empty list, neither probe succeeds and
+    detect_protocol should fall back to ``"openai"``."""
+    with respx.mock(base_url="https://api.example.com/v1") as mock:
+        mock.get("/models").mock(
+            return_value=httpx.Response(200, json={"data": []})
+        )
+        chosen = await detect_protocol("https://api.example.com/v1", "sk")
+    assert chosen == "openai"
 
 
 @pytest.mark.asyncio

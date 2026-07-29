@@ -37,11 +37,10 @@ def test_code_gen_benchmark_passes_for_correct_code() -> None:
     s = b.samples[0]
     assert s.grader == "sandbox"
     assert s.test_code is not None
-    # Emulate an output that solves the first task.
-    if s.id == "he_1":
-        out = "```python\ndef add(a, b):\n    return a + b\n```"
-        res = run_python(out, s.test_code, timeout_s=5.0)
-        assert res.passed, res.stderr
+    assert s.id == "he_1"
+    out = "```python\ndef add(a, b):\n    return a + b\n```"
+    res = run_python(out, s.test_code, timeout_s=5.0)
+    assert res.passed, res.stderr
 
 
 def test_long_context_benchmark_sizes() -> None:
@@ -76,11 +75,10 @@ def test_instantiate_known() -> None:
 async def test_grade_dispatch_for_sandbox() -> None:
     b = CodeGenBenchmark(n_samples=1)
     s = b.samples[0]
-    # Force sample content to be valid Python for the first code-gen task.
-    if s.id == "he_1":
-        out = "def add(a, b):\n    return a + b\n"
-        grade = await b.grade(s, out, client=None, judge_model=None)
-        assert grade.passed
+    assert s.id == "he_1"
+    out = "def add(a, b):\n    return a + b\n"
+    grade = await b.grade(s, out, client=None, judge_model=None)
+    assert grade.passed
 
 
 @pytest.mark.asyncio

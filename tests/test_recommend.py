@@ -45,9 +45,8 @@ def test_recommend_picks_top_models() -> None:
     r.by_model_task[("m2", "latency")] = _ts("latency", passed=5, tps=80, cost=0.0)
 
     recs = {r.category: r for r in recommend(r)}
-    # m2 should win "best_coding" (avg 4/5 + 5/5 = 0.9 vs m1 0.8+0.8=0.8)
     assert recs["best_coding"].model == "m2"
-    # m2 should be "fastest"
+    assert recs["best_coding"].score == 1.0
     assert recs["fastest"].model == "m2"
 
 
