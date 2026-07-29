@@ -10,7 +10,7 @@
     "id": "ce_2",
     "prompt": "Explain what this SQL query does:\n\n```sql\nSELECT u.name, COUNT(o.id) AS order_count\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id\nWHERE u.created_at >= '2024-01-01'\nGROUP BY u.id\nHAVING order_count > 5\nORDER BY order_count DESC;\n```",
     "reference": "Returns names of users created on or after 2024-01-01 with more than 5 orders, ordered by order count descending.",
-    "rubric": "1-5. 5 = correct, mentions all clauses (left join, having, order by). 3 = describes the result correctly but misses at least one clause. 1 = wrong or fundamentally misunderstands the query.",
+    "rubric": "1-5. 5 = correct, mentions all semantics (left join, where date filter on u.created_at, group by u.id, having, order by). 3 = describes the result correctly but misses at least one semantic detail. 1 = wrong or fundamentally misunderstands the query.",
     "grader": "judge"
   },
   {
