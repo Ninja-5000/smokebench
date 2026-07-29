@@ -6,7 +6,7 @@ import re
 
 import pytest
 from textual.containers import HorizontalScroll
-from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, RadioButton, Static
+from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, RadioButton, Select, Static
 
 from smoke_bench.app import LLMBenchApp
 from smoke_bench.tui.screens.run import _sanitize_id
@@ -164,6 +164,38 @@ async def test_endpoint_connection_shows_error_on_probe_failure(monkeypatch) -> 
 
         w = screen.query_one("#status", Static)
         assert "error" in w.classes, f"expected error class, got {w.classes!r}"
+
+
+@pytest.mark.asyncio
+async def test_endpoint_advance_uses_form_values_after_probe(monkeypatch) -> None:
+    from smoke_bench.discovery import DiscoveryResult
+    from smoke_bench.tui.screens.endpoint import EndpointScreen
+    from smoke_bench.tui.screens.models import ModelsScreen
+
+    async def fake_fetch(base_url, api_key, protocol):
+        return DiscoveryResult(models=[{"id": "gpt-4o"}], protocol="openai", used_fallback=False, probe_ok=True)
+
+    state = AppState()
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, EndpointScreen)
+        monkeypatch.setattr(
+            "smoke_bench.tui.screens.endpoint.fetch_models", fake_fetch
+        )
+
+        screen.query_one("#base_url", Input).value = "https://example.test/v1"
+        screen.query_one("#api_key", Input).value = "sk-test"
+        screen.query_one("#protocol", Select).value = "anthropic"
+
+        await screen._advance()
+        await pilot.pause()
+
+        assert state.base_url == "https://example.test/v1"
+        assert state.api_key == "sk-test"
+        assert state.protocol == "anthropic"
+        assert isinstance(app.screen, ModelsScreen)
 
 
 @pytest.mark.asyncio
