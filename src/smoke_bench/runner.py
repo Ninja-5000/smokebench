@@ -46,6 +46,7 @@ async def run_benchmark(
     on_event: EventCallback | None = None,
     *,
     max_concurrency: int = 4,
+    pause_event: asyncio.Event | None = None,
 ) -> TaskScore:
     """Run a single benchmark for a single model with bounded concurrency."""
 
@@ -57,15 +58,17 @@ async def run_benchmark(
 
     async def _run_one(sample):
         nonlocal completed
+        if pause_event is not None:
+            await pause_event.wait()
         request = benchmark.build_request(sample, model)
         start = time.perf_counter()
         ttft: float | None = None
         output_text = ""
         in_tok = out_tok = 0
-        resp_latency: float = 0.0
         err: str | None = None
         client = bench_client
         grading_client = judge_client or bench_client
+        resp_latency: float = 0.0
         try:
             if benchmark.name == "latency":
                 async with sem:
@@ -119,6 +122,7 @@ async def run_benchmark(
                     "passed": res.passed,
                     "score": res.score,
                     "latency_s": res.latency_s,
+                    "detail": res.detail,
                     "tokens_per_s": (
                         res.output_tokens / gen_latency
                         if gen_latency > 0 and res.output_tokens
@@ -174,6 +178,7 @@ async def run_all(
     on_event: EventCallback | None = None,
     *,
     max_concurrency: int = 4,
+    pause_event: asyncio.Event | None = None,
 ) -> RunResult:
     """Run every (model, benchmark) pair. Clients are created lazily per-model."""
     result = RunResult()
@@ -196,6 +201,7 @@ async def run_all(
                         judge_model=judge_model,
                         on_event=on_event,
                         max_concurrency=max_concurrency,
+                        pause_event=pause_event,
                     )
                     # Backfill cost
                     score.cost_usd = cost_for(model, _usage_from_score(score), pricing)

@@ -108,6 +108,8 @@ class RunScreen(Screen):
         self._total_samples = sum(self._model_totals.values())
         self._paused = False
         self._cancelled = False
+        self._pause_event = asyncio.Event()
+        self._pause_event.set()
         self._layout_mode: str | None = None
 
         table = self.query_one("#live-results", DataTable)
@@ -136,7 +138,7 @@ class RunScreen(Screen):
                     f"[SKIP] {bench.name} has 0 samples — skipping."
                 )
         self._sync_panel_layout(self.size.width)
-        self.run_worker(self._run(), exclusive=True)
+        self._run_worker = self.run_worker(self._run(), exclusive=True)
 
     def on_resize(self, event: Resize) -> None:
         self._sync_panel_layout(event.size.width)
@@ -211,8 +213,6 @@ class RunScreen(Screen):
         async def on_event(kind: str, payload: dict) -> None:
             if self._cancelled:
                 raise asyncio.CancelledError()
-            while self._paused:
-                await asyncio.sleep(0.2)
             if kind == "model_start":
                 self._set_model_status(payload["model"], "Starting benchmarks…", "warning")
             elif kind == "task_start":
@@ -230,9 +230,16 @@ class RunScreen(Screen):
                     f"{'PASS' if payload['passed'] else 'FAIL'} score={payload['score']:.2f} "
                     f"latency={payload['latency_s']:.2f}s tps={payload['tokens_per_s']:.1f}"
                 )
-                self._set_run_status(
-                    f"{self._completed_samples} / {self._total_samples} samples complete"
-                )
+                if self._paused:
+                    self._set_run_status("Paused.", "warning")
+                else:
+                    self._set_run_status(
+                        f"{self._completed_samples} / {self._total_samples} samples complete"
+                    )
+                if not payload.get("passed") and payload.get("score", 1.0) == 0.0:
+                    detail = payload.get("detail", "")
+                    if detail:
+                        log.write_line(f"  └─ {detail}")
             elif kind == "task_done":
                 self._set_model_status(payload["model"], f"Completed: {payload['task']}", "success")
             elif kind == "model_done":
@@ -251,6 +258,7 @@ class RunScreen(Screen):
                 make_judge_client=make_judge_client,
                 on_event=on_event,
                 max_concurrency=state.max_concurrency,
+                pause_event=self._pause_event,
             )
         except asyncio.CancelledError:
             self._set_run_status("Cancelled.", "error")
@@ -297,9 +305,16 @@ class RunScreen(Screen):
 
     def action_pause(self) -> None:
         self._paused = not self._paused
-        self.query_one("#pause", Button).label = "Resume" if self._paused else "Pause"
-        self._set_run_status("Paused." if self._paused else "Resumed.", "warning" if self._paused else "")
+        if self._paused:
+            self._pause_event.clear()
+            self.query_one("#pause", Button).label = "Resume"
+            self._set_run_status("Waiting to pause…", "warning")
+        else:
+            self._pause_event.set()
+            self.query_one("#pause", Button).label = "Pause"
+            self._set_run_status("Resumed.", "")
 
     def action_cancel(self) -> None:
         self._cancelled = True
+        self._run_worker.cancel()
         self._set_run_status("Cancelling…", "error")

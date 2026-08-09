@@ -6,7 +6,16 @@ import re
 
 import pytest
 from textual.containers import HorizontalScroll
-from textual.widgets import Button, Collapsible, DataTable, Input, ProgressBar, RadioButton, Select, Static
+from textual.widgets import (
+    Button,
+    Collapsible,
+    DataTable,
+    Input,
+    ProgressBar,
+    RadioButton,
+    Select,
+    Static,
+)
 
 from smoke_bench.app import LLMBenchApp
 from smoke_bench.tui.screens.run import _sanitize_id
@@ -350,3 +359,54 @@ async def test_judge_picker_accepts_a_selected_separate_endpoint_model(monkeypat
         assert isinstance(app.screen, RunScreen)
         assert state.use_separate_judge
         assert state.judge_model == "separate-judge"
+
+
+@pytest.mark.asyncio
+async def test_run_screen_pause_toggles_event_and_button(monkeypatch) -> None:
+    """Pause clears the pause event; resume sets it. No worker cancellation."""
+    from smoke_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"], selected_benchmarks=["math_reasoning"])
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        assert screen._pause_event.is_set()
+        assert screen.query_one("#pause", Button).label == "Pause"
+
+        screen.action_pause()
+        assert not screen._pause_event.is_set()
+        assert screen._paused
+        assert screen.query_one("#pause", Button).label == "Resume"
+        assert "Waiting to pause" in str(screen.query_one("#run-status", Static).render())
+
+        screen.action_pause()
+        assert screen._pause_event.is_set()
+        assert not screen._paused
+        assert screen.query_one("#pause", Button).label == "Pause"
+        assert "Resumed" in str(screen.query_one("#run-status", Static).render())
+
+
+@pytest.mark.asyncio
+async def test_run_screen_cancel_sets_flag(monkeypatch) -> None:
+    from smoke_bench.tui.screens.run import RunScreen
+
+    async def do_not_run(self):
+        return None
+
+    monkeypatch.setattr(RunScreen, "_run", do_not_run)
+    state = AppState(selected_models=["model-a"], selected_benchmarks=["math_reasoning"])
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(RunScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, RunScreen)
+        screen.action_cancel()
+        assert screen._cancelled
