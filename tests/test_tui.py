@@ -410,3 +410,57 @@ async def test_run_screen_cancel_sets_flag(monkeypatch) -> None:
         assert isinstance(screen, RunScreen)
         screen.action_cancel()
         assert screen._cancelled
+
+
+@pytest.mark.asyncio
+async def test_judge_picker_prepopulates_separate_model_from_state() -> None:
+    from smoke_bench.tui.screens.judge_picker import JudgePickerScreen
+
+    state = AppState(
+        selected_models=["model-a"],
+        use_separate_judge=True,
+        judge_model="judge-v2",
+        judge_base_url="https://judge.example/v1",
+        judge_protocol="openai",
+    )
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(JudgePickerScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, JudgePickerScreen)
+        sel = screen.query_one("#judge_model_sep", Select)
+        assert not sel.is_blank()
+        assert sel.value == "judge-v2"
+
+
+@pytest.mark.asyncio
+async def test_judge_connection_test_saves_protocol(monkeypatch) -> None:
+    from smoke_bench.clients.base import ModelInfo
+    from smoke_bench.discovery import DiscoveryResult
+    from smoke_bench.tui.screens.judge_picker import JudgePickerScreen
+
+    async def fake_fetch(url, key, protocol):
+        return DiscoveryResult(
+            models=[ModelInfo(id="judge-v2")],
+            protocol="anthropic",
+            used_fallback=False,
+            probe_ok=True,
+        )
+
+    state = AppState(selected_models=["model-a"])
+    app = LLMBenchApp(state)
+    async with app.run_test() as pilot:
+        await app.push_screen(JudgePickerScreen())
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, JudgePickerScreen)
+        monkeypatch.setattr(
+            "smoke_bench.tui.screens.judge_picker.fetch_models", fake_fetch
+        )
+        screen.query_one("#use_separate", RadioButton).value = True
+        await pilot.pause()
+        screen.query_one("#judge_url", Input).value = "https://judge.example/v1"
+        await screen.action_test_connection()
+        await pilot.pause()
+        assert state.judge_protocol == "anthropic"

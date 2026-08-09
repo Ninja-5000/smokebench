@@ -105,6 +105,12 @@ class JudgePickerScreen(Screen):
         )
 
     def on_mount(self) -> None:
+        state: AppState = self.app.state  # type: ignore[attr-defined]
+        if state.use_separate_judge and state.judge_model:
+            sep = self.query_one("#judge_model_sep", Select)
+            sep.set_options([(state.judge_model, state.judge_model)])
+            sep.value = state.judge_model
+            sep.allow_blank = False
         self._refresh_visibility()
 
     def _refresh_visibility(self) -> None:
@@ -152,6 +158,8 @@ class JudgePickerScreen(Screen):
                 "Reachable, but no models found at /models. Check the URL.", "warning",
             )
         else:
+            state: AppState = self.app.state  # type: ignore[attr-defined]
+            state.judge_protocol = discovery.protocol
             sep = self.query_one("#judge_model_sep", Select)
             sep.set_options([(m.id, m.id) for m in discovery.models])
             sep.allow_blank = False
@@ -175,7 +183,7 @@ class JudgePickerScreen(Screen):
         self._advance()
 
     def _advance(self) -> None:
-        state: AppState = self.app.state
+        state: AppState = self.app.state # type: ignore[attr-defined]
         rs = self.query_one("#radio", RadioSet)
         btn = rs.pressed_button
         choice = btn.id if btn else "use_selected"
@@ -191,6 +199,8 @@ class JudgePickerScreen(Screen):
             state.judge_base_url = self.query_one("#judge_url", Input).value.strip()
             state.judge_api_key = self.query_one("#judge_key", Input).value.strip()
             state.judge_model = str(sel.value)
+            if not state.judge_protocol:
+                state.judge_protocol = "openai"
         else:
             sel = self.query_one("#judge_model_sel", Select)
             if not state.selected_models:
