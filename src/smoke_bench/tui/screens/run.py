@@ -247,6 +247,11 @@ class RunScreen(Screen):
             elif kind == "error":
                 self._set_model_status(payload["model"], f"Error: {payload['task']}", "error")
                 log.write_line(f"[ERROR] {payload['model']}/{payload['task']}: {payload['msg']}")
+            elif kind == "retry":
+                log.write_line(
+                    f"  ↻ retry {payload['model']}/{payload['sample_id']} "
+                    f"attempt {payload['attempt']}: {payload['error']}"
+                )
 
         try:
             result = await run_all(

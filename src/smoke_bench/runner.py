@@ -8,10 +8,12 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
-from smoke_bench.benchmarks.base import Benchmark, SampleResult, TaskScore
+from smoke_bench.benchmarks.base import Benchmark, Sample, SampleResult, TaskScore
 from smoke_bench.clients.base import LLMClient
 from smoke_bench.config import PricingConfig
+from smoke_bench.judging.deterministic import GradeResult
 from smoke_bench.pricing import cost_for
+from smoke_bench.retry import RetryConfig, retry_request
 
 EventKind = str  # "model_start" | "task_start" | "sample_done" | "task_done" | "model_done" | "error"
 EventCallback = Callable[[EventKind, dict], Awaitable[None]]
@@ -28,6 +30,28 @@ def _estimate_tokens(text: str) -> int:
         return len(text.split())
 
 
+def _retry_emitter(
+    model: str, task: str, sample_id: str, on_event: EventCallback | None
+) -> Callable[[int, Exception], Awaitable[None]] | None:
+    """Build an ``on_retry`` callback that surfaces retries via events, if wired."""
+    if on_event is None:
+        return None
+
+    async def _emit(attempt: int, exc: Exception) -> None:
+        await on_event(
+            "retry",
+            {
+                "model": model,
+                "task": task,
+                "sample_id": sample_id,
+                "attempt": attempt,
+                "error": f"{type(exc).__name__}: {exc}",
+            },
+        )
+
+    return _emit
+
+
 @dataclass
 class RunResult:
     """Aggregated results for a single run."""
@@ -35,6 +59,19 @@ class RunResult:
     by_model_task: dict[tuple[str, str], TaskScore] = field(default_factory=dict)
     by_model: dict[str, list[TaskScore]] = field(default_factory=lambda: defaultdict(list))
     errors: list[tuple[str, str, str]] = field(default_factory=list)  # (model, task, msg)
+
+
+@dataclass
+class _Collected:
+    """Raw model response captured in the collect phase, before grading."""
+
+    sample: Sample
+    output_text: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    latency_s: float = 0.0
+    ttft_s: float | None = None
+    error: str | None = None
 
 
 async def run_benchmark(
@@ -47,29 +84,37 @@ async def run_benchmark(
     *,
     max_concurrency: int = 4,
     pause_event: asyncio.Event | None = None,
+    retry_config: RetryConfig | None = None,
 ) -> TaskScore:
-    """Run a single benchmark for a single model with bounded concurrency."""
+    """Run a single benchmark for a single model with bounded concurrency.
+
+    The run happens in two phases. First every sample's model request runs
+    concurrently (bounded by ``max_concurrency``). Then responses are graded
+    sequentially, one after another, so a judge model never receives
+    overlapping requests.
+    """
 
     samples = benchmark.sliced_samples()
     sem = asyncio.Semaphore(max_concurrency)
     results: list[SampleResult] = []
-    completed = 0
     total = len(samples)
 
-    async def _run_one(sample):
-        nonlocal completed
-        if pause_event is not None:
-            await pause_event.wait()
+    async def _collect_one(sample):
+        """Phase 1: request the output from the model under test."""
         request = benchmark.build_request(sample, model)
+        client = bench_client
         start = time.perf_counter()
         ttft: float | None = None
         output_text = ""
         in_tok = out_tok = 0
-        err: str | None = None
-        client = bench_client
-        grading_client = judge_client or bench_client
         resp_latency: float = 0.0
-        try:
+
+        async def _do_request():
+            nonlocal ttft, output_text, in_tok, out_tok, resp_latency
+            ttft = None
+            output_text = ""
+            in_tok = out_tok = 0
+            resp_latency = 0.0
             if benchmark.name == "latency":
                 async with sem:
                     async for chunk in client.stream(request):
@@ -87,53 +132,87 @@ async def run_benchmark(
                     in_tok = resp.usage.input_tokens
                     out_tok = resp.usage.output_tokens
                     resp_latency = resp.latency_s
-        except Exception as e:  # noqa: BLE001
-            err = f"{type(e).__name__}: {e}"
+
+        if pause_event is not None:
+            await pause_event.wait()
+        try:
+            await retry_request(
+                _do_request,
+                config=retry_config,
+                on_retry=_retry_emitter(model, benchmark.name, str(sample.id), on_event),
+            )
+        except Exception as e:  # noqa: BLE001 - exhausted all retries
+            return _Collected(sample=sample, error=f"{type(e).__name__}: {e}")
         if not out_tok and output_text:
             out_tok = _estimate_tokens(output_text)
         latency = resp_latency if resp_latency > 0 else time.perf_counter() - start
-        gen_latency = latency - (ttft or 0.0)
-        grade = await benchmark.grade(
-            sample, output_text, client=grading_client, judge_model=judge_model
-        )
-        completed += 1
-        res = SampleResult(
-            sample_id=sample.id,
-            output=output_text,
-            score=grade.score,
-            passed=grade.passed,
-            latency_s=latency,
-            ttft_s=ttft,
+        return _Collected(
+            sample=sample,
+            output_text=output_text,
             input_tokens=in_tok,
             output_tokens=out_tok,
+            latency_s=latency,
+            ttft_s=ttft,
+        )
+
+    async def _grade_one(col: _Collected) -> SampleResult:
+        """Phase 2: grade and report a collected response, one at a time."""
+        if pause_event is not None:
+            await pause_event.wait()
+        sample = col.sample
+        grading_client = judge_client or bench_client
+        if col.error:
+            grade = GradeResult(score=0.0, passed=False, detail=col.error)
+        else:
+            grade = await retry_request(
+                benchmark.grade,
+                sample,
+                col.output_text,
+                client=grading_client,
+                judge_model=judge_model,
+                config=retry_config,
+                on_retry=_retry_emitter(model, benchmark.name, str(sample.id), on_event),
+            )
+        return SampleResult(
+            sample_id=sample.id,
+            output=col.output_text,
+            score=grade.score,
+            passed=grade.passed,
+            latency_s=col.latency_s,
+            ttft_s=col.ttft_s,
+            input_tokens=col.input_tokens,
+            output_tokens=col.output_tokens,
             detail=grade.detail,
-            error=err,
+            error=col.error,
             tags=sample.tags,
         )
+
+    # Phase 1: collect every response concurrently, bounded by the semaphore.
+    collected = await asyncio.gather(*(_collect_one(s) for s in samples))
+    # Phase 2: grade serially so the judge never gets concurrent requests.
+    for col in collected:
+        res = await _grade_one(col)
+        results.append(res)
         if on_event is not None:
             await on_event(
                 "sample_done",
                 {
                     "task": benchmark.name,
                     "model": model,
-                    "completed": completed,
+                    "completed": len(results),
                     "total": total,
-                    "sample_id": sample.id,
+                    "sample_id": res.sample_id,
                     "passed": res.passed,
                     "score": res.score,
                     "latency_s": res.latency_s,
                     "detail": res.detail,
                     "tokens_per_s": (
-                        res.output_tokens / gen_latency
-                        if gen_latency > 0 and res.output_tokens
+                        res.output_tokens / (res.latency_s - (res.ttft_s or 0.0))
+                        if (res.latency_s - (res.ttft_s or 0.0)) > 0 and res.output_tokens
                         else 0.0
                     ),
                 },
             )
-        return res
-
-    tasks = [asyncio.create_task(_run_one(s)) for s in samples]
-    results = await asyncio.gather(*tasks)
     if on_event is not None:
         await on_event(
             "task_done",
@@ -179,6 +258,7 @@ async def run_all(
     *,
     max_concurrency: int = 4,
     pause_event: asyncio.Event | None = None,
+    retry_config: RetryConfig | None = None,
 ) -> RunResult:
     """Run every (model, benchmark) pair. Clients are created lazily per-model."""
     result = RunResult()
@@ -202,6 +282,7 @@ async def run_all(
                         on_event=on_event,
                         max_concurrency=max_concurrency,
                         pause_event=pause_event,
+                        retry_config=retry_config,
                     )
                     # Backfill cost
                     score.cost_usd = cost_for(model, _usage_from_score(score), pricing)
