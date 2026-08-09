@@ -115,3 +115,28 @@ async def test_run_progress_events() -> None:
     assert result.errors == []
     score = result.by_model_task[("m1", "math_reasoning")]
     assert score.passed >= 1
+
+
+@pytest.mark.asyncio
+async def test_run_estimates_output_tokens_when_usage_omitted() -> None:
+    body = (
+        "data: {\"choices\":[{\"delta\":{\"content\":\"seven\"}}]}\n\n"
+        "data: {\"choices\":[{\"delta\":{\"content\":\" eleven\"}}]}\n\n"
+        "data: {\"choices\":[{\"finish_reason\":\"stop\"}]}\n\n"
+        "data: [DONE]\n\n"
+    )
+    with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
+        mock.post("/chat/completions").mock(
+            return_value=httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
+        )
+        result = await run_all(
+            models=["m1"],
+            benchmarks=[LatencyBenchmark(n_samples=1)],
+            make_client=lambda m: OpenAICompatClient("https://api.example.com/v1", "sk-test"),
+            pricing=None,  # type: ignore[arg-type]
+        )
+    score = result.by_model_task[("m1", "latency")]
+    sample = score.per_sample[0]
+    assert sample.output == "seven eleven"
+    assert sample.output_tokens > 0
+    assert score.mean_tokens_per_s > 0

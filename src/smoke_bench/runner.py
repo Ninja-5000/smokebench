@@ -17,6 +17,17 @@ EventKind = str  # "model_start" | "task_start" | "sample_done" | "task_done" | 
 EventCallback = Callable[[EventKind, dict], Awaitable[None]]
 
 
+def _estimate_tokens(text: str) -> int:
+    """Estimate output tokens when the API omits usage data. tiktoken first."""
+    try:
+        import tiktoken
+
+        enc = tiktoken.encoding_for_model("gpt-4")
+        return len(enc.encode(text))
+    except Exception:  # noqa: BLE001 - tiktoken may be missing or no model
+        return len(text.split())
+
+
 @dataclass
 class RunResult:
     """Aggregated results for a single run."""
@@ -51,6 +62,7 @@ async def run_benchmark(
         ttft: float | None = None
         output_text = ""
         in_tok = out_tok = 0
+        resp_latency: float = 0.0
         err: str | None = None
         client = bench_client
         grading_client = judge_client or bench_client
@@ -71,9 +83,12 @@ async def run_benchmark(
                     output_text = resp.text
                     in_tok = resp.usage.input_tokens
                     out_tok = resp.usage.output_tokens
+                    resp_latency = resp.latency_s
         except Exception as e:  # noqa: BLE001
             err = f"{type(e).__name__}: {e}"
-        latency = time.perf_counter() - start
+        if not out_tok and output_text:
+            out_tok = _estimate_tokens(output_text)
+        latency = resp_latency if resp_latency > 0 else time.perf_counter() - start
         gen_latency = latency - (ttft or 0.0)
         grade = await benchmark.grade(
             sample, output_text, client=grading_client, judge_model=judge_model
