@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from smoke_bench.clients.base import LLMClient
 from smoke_bench.judging.deterministic import GradeResult
+from smoke_bench.retry import RetryConfig, retry_request
 
 
 @dataclass
@@ -53,6 +54,7 @@ async def judge_output(
     prompt: str,
     output: str,
     spec: JudgeSpec | None = None,
+    retry_config: RetryConfig | None = None,
 ) -> GradeResult:
     """Score a single output via an LLM judge."""
     from smoke_bench.clients.base import ChatMessage, ChatRequest
@@ -73,9 +75,20 @@ async def judge_output(
         temperature=0.0,
         json_mode=True,
     )
-    try:
+
+    async def _judge_call(use_json_mode: bool) -> str:
+        req.json_mode = use_json_mode
         resp = await client.chat(req)
-    except Exception as e:
-        return GradeResult(score=0.0, passed=False, detail=f"judge error: {e}")
-    score = _parse_score(resp.text, spec.max_score)
-    return GradeResult(score=score, passed=score >= 0.6, detail=resp.text[:200])
+        return resp.text
+
+    try:
+        text = await retry_request(_judge_call, True, config=retry_config)
+    except Exception:
+        # Some models don't support response_format (json mode) but still
+        # produce JSON output. Retry without it before declaring failure.
+        try:
+            text = await retry_request(_judge_call, False, config=retry_config)
+        except Exception as e:  # noqa: BLE001
+            return GradeResult(score=0.0, passed=False, detail=f"judge error: {e}")
+    score = _parse_score(text, spec.max_score)
+    return GradeResult(score=score, passed=score >= 0.6, detail=text[:200])
