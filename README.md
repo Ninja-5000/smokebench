@@ -84,6 +84,21 @@ uv tool install smokebench
 
 ---
 
+## Screenshots
+
+**Endpoint Configuration**
+![Endpoint Configuration](./assets/endpoint-screen.png)
+**Model Selection**
+![Model Selection](./assets/models-screen.png)
+**Benchmark Toggle**
+![Benchmark Toggle](./assets/benchmarks-screen.png)
+**Judge Configuration**
+![Judge Configuration](./assets/judge-screen.png)
+**Run Progress**
+![Run Progress](./assets/running-screen.png)
+
+---
+
 ## Built-in Benchmarks (8)
 
 | Task | Samples | Grader | Measures |
