@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import ClassVar
 
 from rich.text import Text
@@ -37,6 +38,14 @@ def _sanitize_id(s: str) -> str:
     if result and result[0].isdigit():
         result = "_" + result
     return result
+
+
+_debug_logger = logging.getLogger("smokebench.tui.run")
+_debug_logger.setLevel(logging.DEBUG)
+if not _debug_logger.handlers:
+    _handler = logging.FileHandler("smokebench_debug.log", mode="a", encoding="utf-8")
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    _debug_logger.addHandler(_handler)
 
 
 class RunScreen(Screen):
@@ -104,7 +113,9 @@ class RunScreen(Screen):
         }
         self._model_status = {model: "Waiting…" for model in state.selected_models}
         self._model_completed = {model: 0 for model in state.selected_models}
+        self._model_collected = {model: 0 for model in state.selected_models}
         self._completed_samples = 0
+        self._collected_samples = 0
         self._total_samples = sum(self._model_totals.values())
         self._paused = False
         self._cancelled = False
@@ -213,44 +224,72 @@ class RunScreen(Screen):
         async def on_event(kind: str, payload: dict) -> None:
             if self._cancelled:
                 raise asyncio.CancelledError()
-            if kind == "model_start":
-                self._set_model_status(payload["model"], "Starting benchmarks…", "warning")
-            elif kind == "task_start":
-                self._set_model_status(payload["model"], f"Current: {payload['task']}")
-            elif kind == "sample_done":
-                self._completed_samples += 1
-                self._model_completed[payload["model"]] += 1
-                bar = self.query_one(
-                    f"#model_bar_{_sanitize_id(payload['model'])}", ProgressBar
-                )
-                bar.progress = min(self._model_completed[payload["model"]], bar.total)
-                self._append_result(payload)
-                log.write_line(
-                    f"[{payload['model']}/{payload['task']}] {payload['sample_id']} "
-                    f"{'PASS' if payload['passed'] else 'FAIL'} score={payload['score']:.2f} "
-                    f"latency={payload['latency_s']:.2f}s tps={payload['tokens_per_s']:.1f}"
-                )
-                if self._paused:
-                    self._set_run_status("Paused.", "warning")
-                else:
-                    self._set_run_status(
-                        f"{self._completed_samples} / {self._total_samples} samples complete"
+            _debug_logger.debug("event %s model=%r task=%r", kind, payload.get("model"), payload.get("task"))
+            try:
+                if kind == "model_start":
+                    self._set_model_status(payload["model"], "Starting benchmarks…", "warning")
+                elif kind == "task_start":
+                    self._set_model_status(payload["model"], f"Current: {payload['task']}")
+                elif kind == "collected":
+                    self._collected_samples += 1
+                    self._model_collected[payload["model"]] += 1
+                    bar = self.query_one(
+                        f"#model_bar_{_sanitize_id(payload['model'])}", ProgressBar
                     )
-                if not payload.get("passed") and payload.get("score", 1.0) == 0.0:
-                    detail = payload.get("detail", "")
-                    if detail:
-                        log.write_line(f"  └─ {detail}")
-            elif kind == "task_done":
-                self._set_model_status(payload["model"], f"Completed: {payload['task']}", "success")
-            elif kind == "model_done":
-                self._set_model_status(payload["model"], "Finished", "success")
-            elif kind == "error":
-                self._set_model_status(payload["model"], f"Error: {payload['task']}", "error")
-                log.write_line(f"[ERROR] {payload['model']}/{payload['task']}: {payload['msg']}")
-            elif kind == "retry":
+                    bar.progress = min(self._model_collected[payload["model"]], bar.total)
+                    ttft = payload.get("ttft_s")
+                    ttft_part = f", ttft={ttft:.2f}s" if ttft else ""
+                    log.write_line(
+                        f"[{payload['model']}/{payload['task']}] {payload['sample_id']} "
+                        f"received (latency={payload['latency_s']:.2f}s{ttft_part})"
+                    )
+                elif kind == "sample_done":
+                    self._completed_samples += 1
+                    self._model_completed[payload["model"]] += 1
+                    bar = self.query_one(
+                        f"#model_bar_{_sanitize_id(payload['model'])}", ProgressBar
+                    )
+                    bar.progress = min(
+                        max(
+                            self._model_completed[payload["model"]],
+                            self._model_collected[payload["model"]],
+                        ),
+                        bar.total,
+                    )
+                    self._append_result(payload)
+                    log.write_line(
+                        f"[{payload['model']}/{payload['task']}] {payload['sample_id']} "
+                        f"{'PASS' if payload['passed'] else 'FAIL'} score={payload['score']:.2f} "
+                        f"latency={payload['latency_s']:.2f}s tps={payload['tokens_per_s']:.1f}"
+                    )
+                    if self._paused:
+                        self._set_run_status("Paused.", "warning")
+                    else:
+                        self._set_run_status(
+                            f"{self._completed_samples} / {self._total_samples} samples complete"
+                        )
+                    if not payload.get("passed") and payload.get("score", 1.0) == 0.0:
+                        detail = payload.get("detail", "")
+                        if detail:
+                            log.write_line(f"  └─ {detail}")
+                elif kind == "task_done":
+                    self._set_model_status(payload["model"], f"Completed: {payload['task']}", "success")
+                elif kind == "model_done":
+                    self._set_model_status(payload["model"], "Finished", "success")
+                elif kind == "error":
+                    self._set_model_status(payload["model"], f"Error: {payload['task']}", "error")
+                    log.write_line(f"[ERROR] {payload['model']}/{payload['task']}: {payload['msg']}")
+                elif kind == "retry":
+                    log.write_line(
+                        f"  ↻ retry {payload['model']}/{payload['sample_id']} "
+                        f"attempt {payload['attempt']}: {payload['error']}"
+                    )
+            except Exception as exc:  # noqa: BLE001 - record UI failures, don't abort the run
+                _debug_logger.exception(
+                    "on_event(%s) failed for model=%r task=%r", kind, payload.get("model"), payload.get("task")
+                )
                 log.write_line(
-                    f"  ↻ retry {payload['model']}/{payload['sample_id']} "
-                    f"attempt {payload['attempt']}: {payload['error']}"
+                    f"[UI] failed to render event {kind}: {type(exc).__name__}: {exc}"
                 )
 
         try:

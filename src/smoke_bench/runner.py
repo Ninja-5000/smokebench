@@ -146,6 +146,20 @@ async def run_benchmark(
         if not out_tok and output_text:
             out_tok = _estimate_tokens(output_text)
         latency = resp_latency if resp_latency > 0 else time.perf_counter() - start
+        if on_event is not None:
+            try:
+                await on_event(
+                    "collected",
+                    {
+                        "model": model,
+                        "task": benchmark.name,
+                        "sample_id": str(sample.id),
+                        "latency_s": latency,
+                        "ttft_s": ttft,
+                    },
+                )
+            except Exception:  # noqa: BLE001 - never let reporting break collection
+                pass
         return _Collected(
             sample=sample,
             output_text=output_text,
@@ -190,34 +204,57 @@ async def run_benchmark(
     # Phase 1: collect every response concurrently, bounded by the semaphore.
     collected = await asyncio.gather(*(_collect_one(s) for s in samples))
     # Phase 2: grade serially so the judge never gets concurrent requests.
+    # A grading failure for one sample must not kill the loop or drop the
+    # remaining samples.
     for col in collected:
-        res = await _grade_one(col)
+        try:
+            res = await _grade_one(col)
+        except Exception as e:  # noqa: BLE001 - keep grading the rest
+            res = SampleResult(
+                sample_id=col.sample.id,
+                output=col.output_text,
+                score=0.0,
+                passed=False,
+                latency_s=col.latency_s,
+                ttft_s=col.ttft_s,
+                input_tokens=col.input_tokens,
+                output_tokens=col.output_tokens,
+                detail=f"Grading failed: {type(e).__name__}: {e}",
+                error=col.error or str(e),
+                tags=col.sample.tags,
+            )
         results.append(res)
         if on_event is not None:
-            await on_event(
-                "sample_done",
-                {
-                    "task": benchmark.name,
-                    "model": model,
-                    "completed": len(results),
-                    "total": total,
-                    "sample_id": res.sample_id,
-                    "passed": res.passed,
-                    "score": res.score,
-                    "latency_s": res.latency_s,
-                    "detail": res.detail,
-                    "tokens_per_s": (
-                        res.output_tokens / (res.latency_s - (res.ttft_s or 0.0))
-                        if (res.latency_s - (res.ttft_s or 0.0)) > 0 and res.output_tokens
-                        else 0.0
-                    ),
-                },
-            )
+            try:
+                await on_event(
+                    "sample_done",
+                    {
+                        "task": benchmark.name,
+                        "model": model,
+                        "completed": len(results),
+                        "total": total,
+                        "sample_id": res.sample_id,
+                        "passed": res.passed,
+                        "score": res.score,
+                        "latency_s": res.latency_s,
+                        "detail": res.detail,
+                        "tokens_per_s": (
+                            res.output_tokens / (res.latency_s - (res.ttft_s or 0.0))
+                            if (res.latency_s - (res.ttft_s or 0.0)) > 0 and res.output_tokens
+                            else 0.0
+                        ),
+                    },
+                )
+            except Exception:  # noqa: BLE001 - UI failures must not abort the run
+                pass
     if on_event is not None:
-        await on_event(
-            "task_done",
-            {"task": benchmark.name, "model": model, "n": len(results)},
-        )
+        try:
+            await on_event(
+                "task_done",
+                {"task": benchmark.name, "model": model, "n": len(results)},
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     # Aggregate
     latencies = sorted(r.latency_s for r in results if r.latency_s > 0)
