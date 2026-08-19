@@ -164,20 +164,36 @@ async def test_judge_batched_then_graded_serially() -> None:
     batches then graded one at a time."""
     events = []
 
+    class _DelayedClient(_TrackingClient):
+        def __init__(self):
+            super().__init__("https://api.example.com/v1", "sk-test")
+            self._active_collection = 0
+            self.max_active_collection = 0
+
+        async def chat(self, request):
+            if request.model == "m1":
+                self._active_collection += 1
+                self.max_active_collection = max(
+                    self.max_active_collection, self._active_collection
+                )
+                await asyncio.sleep(0)
+                self._active_collection -= 1
+            return await super().chat(request)
+
     async def on_event(kind, payload):
         events.append((kind, payload))
 
-    with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
-        mock.post("/chat/completions").mock(return_value=_ok_response("Some output"))
-        result = await run_all(
-            models=["m1"],
-            benchmarks=[CodeExplainBenchmark(n_samples=4)],
-            make_client=lambda m: OpenAICompatClient("https://api.example.com/v1", "sk-test"),
-            pricing=None,  # type: ignore[arg-type]
-            on_event=on_event,
-            judge_model="judge-model",
-            max_concurrency=2,
-        )
+    client = _DelayedClient()
+    result = await run_all(
+        models=["m1"],
+        benchmarks=[CodeExplainBenchmark(n_samples=4)],
+        make_client=lambda m: client,
+        pricing=None,  # type: ignore[arg-type]
+        on_event=on_event,
+        judge_model="judge-model",
+        max_concurrency=2,
+    )
+    assert client.max_active_collection == 2
     pairs = [
         k for k, _ in events if k in ("collected", "sample_done")
     ]
