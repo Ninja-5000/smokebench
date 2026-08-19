@@ -10,6 +10,7 @@ Measure response quality, schema compliance, token throughput, and more on *your
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Built with Textual](https://img.shields.io/badge/built%20with-Textual-ff69b4)](https://textual.textualize.io/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Ninja-5000/smokebench)
 
 [Why smokebench](#why-smokebench) • [Quick Start](#quick-start) • [TUI Walkthrough](#tui-walkthrough) • [Built-in Benchmarks](#built-in-benchmarks-8) • [Development/Contribution](#contributing)
 
