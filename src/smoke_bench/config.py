@@ -55,6 +55,10 @@ class AppConfig(BaseModel):
     token_overrides: dict[str, int] = Field(default_factory=dict)
     global_max_tokens: int = 4096
     max_concurrency: int = 4
+    per_attempt_timeout: float = 100.0
+    """Hard deadline per HTTP attempt; on expiry the request is aborted and
+    cancelled before a retry starts (so a slow backend stops generating the
+    abandoned request instead of running it in parallel with the retry)."""
 
 
 def load_config(path: Path = CONFIG_PATH) -> AppConfig:

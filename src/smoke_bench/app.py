@@ -48,6 +48,7 @@ def run(argv: list[str] | None = None) -> int:
         token_overrides=dict(cfg.token_overrides),
         global_max_tokens=cfg.global_max_tokens,
         max_concurrency=cfg.max_concurrency,
+        per_attempt_timeout=cfg.per_attempt_timeout,
         pricing=cfg.pricing,
         judge_model=cfg.endpoint.judge_model,
         judge_base_url=cfg.endpoint.judge_base_url,
@@ -75,6 +76,7 @@ def run(argv: list[str] | None = None) -> int:
         cfg.token_overrides = dict(state.token_overrides)
         cfg.global_max_tokens = state.global_max_tokens
         cfg.max_concurrency = state.max_concurrency
+        cfg.per_attempt_timeout = state.per_attempt_timeout
         save_config(cfg, CONFIG_PATH)
     return 0
 

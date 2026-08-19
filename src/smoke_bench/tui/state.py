@@ -33,6 +33,7 @@ class AppState:
     sample_overrides: dict[str, int] = field(default_factory=dict)
     token_overrides: dict[str, int] = field(default_factory=dict)
     global_max_tokens: int = 4096
+    per_attempt_timeout: float = 100.0
 
     # Pricing (loaded later)
     pricing: Any = None

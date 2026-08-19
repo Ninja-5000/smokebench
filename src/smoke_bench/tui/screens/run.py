@@ -19,6 +19,7 @@ from smoke_bench.clients.detect import make_client
 from smoke_bench.results.recommend import recommend
 from smoke_bench.results.report import markdown_report
 from smoke_bench.results.store import save_result
+from smoke_bench.retry import RetryConfig
 from smoke_bench.runner import run_all
 from smoke_bench.tui.state import AppState
 from smoke_bench.tui.widgets import HelpBar
@@ -290,6 +291,9 @@ class RunScreen(Screen):
                 on_event=on_event,
                 max_concurrency=state.max_concurrency,
                 pause_event=self._pause_event,
+                retry_config=RetryConfig(
+                    per_attempt_timeout=state.per_attempt_timeout
+                ),
             )
         except asyncio.CancelledError:
             self._set_run_status("Cancelled.", "error")
