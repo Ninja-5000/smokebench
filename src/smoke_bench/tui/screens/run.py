@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import ClassVar
 
 from rich.text import Text
@@ -38,14 +37,6 @@ def _sanitize_id(s: str) -> str:
     if result and result[0].isdigit():
         result = "_" + result
     return result
-
-
-_debug_logger = logging.getLogger("smokebench.tui.run")
-_debug_logger.setLevel(logging.DEBUG)
-if not _debug_logger.handlers:
-    _handler = logging.FileHandler("smokebench_debug.log", mode="a", encoding="utf-8")
-    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-    _debug_logger.addHandler(_handler)
 
 
 class RunScreen(Screen):
@@ -224,7 +215,6 @@ class RunScreen(Screen):
         async def on_event(kind: str, payload: dict) -> None:
             if self._cancelled:
                 raise asyncio.CancelledError()
-            _debug_logger.debug("event %s model=%r task=%r", kind, payload.get("model"), payload.get("task"))
             try:
                 if kind == "model_start":
                     self._set_model_status(payload["model"], "Starting benchmarks…", "warning")
@@ -285,9 +275,6 @@ class RunScreen(Screen):
                         f"attempt {payload['attempt']}: {payload['error']}"
                     )
             except Exception as exc:  # noqa: BLE001 - record UI failures, don't abort the run
-                _debug_logger.exception(
-                    "on_event(%s) failed for model=%r task=%r", kind, payload.get("model"), payload.get("task")
-                )
                 log.write_line(
                     f"[UI] failed to render event {kind}: {type(exc).__name__}: {exc}"
                 )

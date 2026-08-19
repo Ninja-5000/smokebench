@@ -9,6 +9,7 @@ import pytest
 import respx
 
 from smoke_bench.benchmarks import (
+    CodeExplainBenchmark,
     CodeGenBenchmark,
     LatencyBenchmark,
     MathReasonBenchmark,
@@ -121,6 +122,78 @@ async def test_run_progress_events() -> None:
     assert result.errors == []
     score = result.by_model_task[("m1", "math_reasoning")]
     assert score.passed >= 1
+
+
+@pytest.mark.asyncio
+async def test_deterministic_grading_reports_per_sample() -> None:
+    """Without a judge, each sample is collected, graded, and reported in
+    sequence — not batched after all responses arrive."""
+    events = []
+
+    async def on_event(kind, payload):
+        events.append((kind, payload))
+
+    with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
+        mock.post("/chat/completions").mock(return_value=_ok_response("The answer is 72\n#### 72"))
+        result = await run_all(
+            models=["m1"],
+            benchmarks=[MathReasonBenchmark(n_samples=3)],
+            make_client=lambda m: OpenAICompatClient("https://api.example.com/v1", "sk-test"),
+            pricing=None,  # type: ignore[arg-type]
+            on_event=on_event,
+            max_concurrency=3,
+        )
+    pairs = [
+        k for k, _ in events if k in ("collected", "sample_done")
+    ]
+    assert pairs == [
+        "collected",
+        "sample_done",
+        "collected",
+        "sample_done",
+        "collected",
+        "sample_done",
+    ]
+    score = result.by_model_task[("m1", "math_reasoning")]
+    assert score.n == 3
+
+
+@pytest.mark.asyncio
+async def test_judge_batched_then_graded_serially() -> None:
+    """With an LLM judge and concurrency > 1, responses are collected in
+    batches then graded one at a time."""
+    events = []
+
+    async def on_event(kind, payload):
+        events.append((kind, payload))
+
+    with respx.mock(base_url="https://api.example.com/v1", assert_all_called=False) as mock:
+        mock.post("/chat/completions").mock(return_value=_ok_response("Some output"))
+        result = await run_all(
+            models=["m1"],
+            benchmarks=[CodeExplainBenchmark(n_samples=4)],
+            make_client=lambda m: OpenAICompatClient("https://api.example.com/v1", "sk-test"),
+            pricing=None,  # type: ignore[arg-type]
+            on_event=on_event,
+            judge_model="judge-model",
+            max_concurrency=2,
+        )
+    pairs = [
+        k for k, _ in events if k in ("collected", "sample_done")
+    ]
+    # Batch of 2 collected first, then 2 graded, then next batch of 2.
+    assert pairs == [
+        "collected",
+        "collected",
+        "sample_done",
+        "sample_done",
+        "collected",
+        "collected",
+        "sample_done",
+        "sample_done",
+    ]
+    score = result.by_model_task[("m1", "code_explanation")]
+    assert score.n == 4
 
 
 @pytest.mark.asyncio
