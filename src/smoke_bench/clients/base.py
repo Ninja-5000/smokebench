@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from smoke_bench.clients._http import abort_client
+
+if TYPE_CHECKING:
+    import httpx
 
 
 @dataclass
@@ -70,6 +76,18 @@ class LLMClient(ABC):
     def __init__(self, base_url: str, api_key: str) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self._active_http: dict[asyncio.Task, httpx.AsyncClient] = {}
+
+    async def abort_active(self) -> None:
+        """Abort the in-flight HTTP request owned by the calling task, if any.
+
+        Clients register the per-request httpx client before sending, so a
+        retry loop can force-close the socket of the exact request that timed
+        out even when multiple requests share this client concurrently.
+        """
+        http = self._active_http.pop(asyncio.current_task(), None)
+        if http is not None:
+            await abort_client(http)
 
     @abstractmethod
     async def list_models(self) -> list[ModelInfo]: ...

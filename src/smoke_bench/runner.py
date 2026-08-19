@@ -115,31 +115,31 @@ async def run_benchmark(
             in_tok = out_tok = 0
             resp_latency = 0.0
             if benchmark.name == "latency":
-                async with sem:
-                    async for chunk in client.stream(request):
-                        if chunk.ttft and ttft is None:
-                            ttft = time.perf_counter() - start
-                        if chunk.delta:
-                            output_text += chunk.delta
-                        if chunk.usage:
-                            in_tok = chunk.usage.input_tokens or in_tok
-                            out_tok = chunk.usage.output_tokens or out_tok
+                async for chunk in client.stream(request):
+                    if chunk.ttft and ttft is None:
+                        ttft = time.perf_counter() - start
+                    if chunk.delta:
+                        output_text += chunk.delta
+                    if chunk.usage:
+                        in_tok = chunk.usage.input_tokens or in_tok
+                        out_tok = chunk.usage.output_tokens or out_tok
             else:
-                async with sem:
-                    resp = await client.chat(request)
-                    output_text = resp.text
-                    in_tok = resp.usage.input_tokens
-                    out_tok = resp.usage.output_tokens
-                    resp_latency = resp.latency_s
+                resp = await client.chat(request)
+                output_text = resp.text
+                in_tok = resp.usage.input_tokens
+                out_tok = resp.usage.output_tokens
+                resp_latency = resp.latency_s
 
         try:
-            await retry_request(
-                _do_request,
-                config=retry_config,
-                on_retry=_retry_emitter(
-                    model, benchmark.name, str(sample.id), on_event
-                ),
-            )
+            async with sem:
+                await retry_request(
+                    _do_request,
+                    config=retry_config,
+                    on_retry=_retry_emitter(
+                        model, benchmark.name, str(sample.id), on_event
+                    ),
+                    on_timeout=bench_client.abort_active,
+                )
         except Exception as e:  # noqa: BLE001 - exhausted all retries
             return _Collected(sample=sample, error=f"{type(e).__name__}: {e}")
         if not out_tok and output_text:
@@ -187,6 +187,7 @@ async def run_benchmark(
                 on_retry=_retry_emitter(
                     model, benchmark.name, str(sample.id), on_event
                 ),
+                on_timeout=grading_client.abort_active,
             )
         return SampleResult(
             sample_id=sample.id,

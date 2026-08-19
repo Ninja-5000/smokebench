@@ -21,3 +21,17 @@ def make_client(base_url: str, api_key: str, timeout: float = 60.0) -> httpx.Asy
         headers=headers,
         timeout=httpx.Timeout(timeout, connect=10.0),
     )
+
+
+async def abort_client(client: httpx.AsyncClient) -> None:
+    """Force-close an httpx client, killing any in-flight TCP socket.
+
+    Plain ``client.aclose()`` only tears down connections tracked by the pool;
+    a request cancelled mid-await (e.g. after a timeout) can leave the socket
+    orphaned so the server never sees the disconnect and keeps generating.
+    Closing the transport directly guarantees the socket is terminated.
+    """
+    try:
+        await client._transport.aclose()
+    except Exception:  # noqa: BLE001 - best-effort abort, never mask the caller
+        pass

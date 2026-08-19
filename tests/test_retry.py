@@ -25,7 +25,10 @@ async def test_retries_transient_500_then_succeeds() -> None:
             )
         return "ok"
 
-    assert await retry_request(flaky, config=RetryConfig(max_retries=3, base_delay=0.0)) == "ok"
+    assert (
+        await retry_request(flaky, config=RetryConfig(max_retries=3, base_delay=0.0))
+        == "ok"
+    )
     assert calls == 3
 
 
@@ -36,10 +39,14 @@ async def test_retries_exhausted_raises() -> None:
     async def always_fails():
         nonlocal calls
         calls += 1
-        raise httpx.ConnectError("connection refused", request=httpx.Request("POST", "http://x"))
+        raise httpx.ConnectError(
+            "connection refused", request=httpx.Request("POST", "http://x")
+        )
 
     with pytest.raises(httpx.ConnectError):
-        await retry_request(always_fails, config=RetryConfig(max_retries=3, base_delay=0.0))
+        await retry_request(
+            always_fails, config=RetryConfig(max_retries=3, base_delay=0.0)
+        )
     assert calls == 4
 
 
@@ -57,7 +64,9 @@ async def test_non_retryable_400_raises_immediately() -> None:
         )
 
     with pytest.raises(httpx.HTTPStatusError):
-        await retry_request(bad_request, config=RetryConfig(max_retries=3, base_delay=0.0))
+        await retry_request(
+            bad_request, config=RetryConfig(max_retries=3, base_delay=0.0)
+        )
     assert calls == 1
 
 
@@ -103,7 +112,87 @@ async def test_retries_respect_backoff_delay_schedule() -> None:
     asyncio.sleep = fake_sleep  # type: ignore[assignment]
     try:
         with pytest.raises(httpx.HTTPStatusError):
-            await retry_request(flaky, config=RetryConfig(max_retries=3, base_delay=2.0))
+            await retry_request(
+                flaky, config=RetryConfig(max_retries=3, base_delay=2.0)
+            )
     finally:
         asyncio.sleep = original_sleep  # type: ignore[assignment]
     assert sleeps == [2.0, 4.0, 8.0]
+
+
+@pytest.mark.asyncio
+async def test_per_attempt_timeout_cancels_request_before_retry() -> None:
+    """A request that exceeds the per-attempt deadline is cancelled (aborting
+    any in-flight HTTP work) before the next retry starts, not left running."""
+    attempts = 0
+    cancelled_attempts: list[int] = []
+
+    async def hang_then_ok():
+        nonlocal attempts
+        attempts += 1
+        try:
+            if attempts == 1:
+                await asyncio.sleep(3600)  # never completes on its own
+            return "ok"
+        except asyncio.CancelledError:
+            cancelled_attempts.append(attempts)
+            raise
+
+    result = await retry_request(
+        hang_then_ok,
+        config=RetryConfig(max_retries=3, base_delay=0.0, per_attempt_timeout=0.05),
+    )
+    assert result == "ok"
+    assert attempts == 2
+    assert cancelled_attempts == [1]  # first attempt was cancelled before retrying
+
+
+@pytest.mark.asyncio
+async def test_per_attempt_timeout_exhausted_raises() -> None:
+    """When every attempt exceeds the per-attempt deadline, the run raises a
+    retryable httpx timeout after cancelling the last in-flight attempt."""
+    cancelled_attempts: list[int] = []
+
+    async def always_hangs():
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            cancelled_attempts.append(True)
+            raise
+
+    with pytest.raises(httpx.ReadTimeout):
+        await retry_request(
+            always_hangs,
+            config=RetryConfig(max_retries=2, base_delay=0.0, per_attempt_timeout=0.05),
+        )
+    assert cancelled_attempts == [True, True, True]  # every attempt cancelled
+
+
+@pytest.mark.asyncio
+async def test_per_attempt_timeout_on_timeout_fires_before_cancel() -> None:
+    """``on_timeout`` must run while the attempt is still running (uncancelled),
+    so the caller can abort the in-flight socket before cancellation would make
+    that abort ineffective."""
+    attempt_cancelled = False
+    saw_cancelled_during_timeout: bool | None = None
+
+    async def hang():
+        nonlocal attempt_cancelled
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            attempt_cancelled = True
+            raise
+
+    async def on_timeout() -> None:
+        nonlocal saw_cancelled_during_timeout
+        saw_cancelled_during_timeout = attempt_cancelled
+
+    with pytest.raises(httpx.ReadTimeout):
+        await retry_request(
+            hang,
+            config=RetryConfig(max_retries=0, base_delay=0.0, per_attempt_timeout=0.05),
+            on_timeout=on_timeout,
+        )
+    assert saw_cancelled_during_timeout is False  # still uncancelled when hook ran
+    assert attempt_cancelled is True  # cancelled right after the hook

@@ -82,12 +82,16 @@ async def judge_output(
         return resp.text
 
     try:
-        text = await retry_request(_judge_call, True, config=retry_config)
+        text = await retry_request(
+            _judge_call, True, config=retry_config, on_timeout=client.abort_active
+        )
     except Exception:
         # Some models don't support response_format (json mode) but still
         # produce JSON output. Retry without it before declaring failure.
         try:
-            text = await retry_request(_judge_call, False, config=retry_config)
+            text = await retry_request(
+                _judge_call, False, config=retry_config, on_timeout=client.abort_active
+            )
         except Exception as e:  # noqa: BLE001
             return GradeResult(score=0.0, passed=False, detail=f"judge error: {e}")
     score = _parse_score(text, spec.max_score)

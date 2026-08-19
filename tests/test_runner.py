@@ -411,3 +411,53 @@ async def test_model_exhausted_retries_reports_error_and_fails() -> None:
     assert score.passed == 0
     assert all(r.error is not None for r in score.per_sample)
     assert all(r.score == 0.0 for r in score.per_sample)
+
+
+@pytest.mark.asyncio
+async def test_semaphore_held_during_retry_backoff() -> None:
+    """When a request times out and retries, the semaphore slot stays held for
+    the whole retry cycle (including backoff), so the concurrency limit is
+    never exceeded by overlapping requests."""
+    from smoke_bench.retry import RetryConfig
+
+    active = 0
+    max_active = 0
+
+    class _TimeoutThenOkClient(_TrackingClient):
+        def __init__(self):
+            super().__init__("https://api.example.com/v1", "sk-test")
+            self.model_attempts = 0
+            self.timeouts = 0
+
+        async def chat(self, request):
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            try:
+                if request.model == "m1":
+                    self.model_attempts += 1
+                    if self.model_attempts <= 2:
+                        self.timeouts += 1
+                        raise httpx.TimeoutException(
+                            "timed out",
+                            request=httpx.Request("POST", "http://x/v1"),
+                        )
+                return await super().chat(request)
+            finally:
+                active -= 1
+
+    client = _TimeoutThenOkClient()
+    bench = _JudgeBenchmark(n_samples=4)
+    score = await run_benchmark(
+        bench,
+        "m1",
+        client,
+        judge_client=client,
+        judge_model="judge-x",
+        max_concurrency=2,
+        retry_config=RetryConfig(max_retries=3, base_delay=0.05),
+    )
+    assert score.n == 4
+    assert client.timeouts == 2  # two samples timed out and were retried
+    assert client.model_attempts == 6  # 4 first attempts + 2 retries
+    assert max_active <= 2  # concurrency limit respected even during retries

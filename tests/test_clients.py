@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 import respx
@@ -187,3 +189,91 @@ async def test_probe_returns_false_on_empty_data() -> None:
         mock.get("/models").mock(return_value=httpx.Response(200, json={"data": []}))
         result = await client.probe()
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_abort_client_closes_transport() -> None:
+    """abort_client must tear down the transport, killing any in-flight socket."""
+    from unittest import mock
+
+    from smoke_bench.clients._http import abort_client
+
+    client = httpx.AsyncClient(base_url="http://x")
+    with mock.patch.object(client._transport, "aclose", new_callable=mock.AsyncMock) as m:
+        await abort_client(client)
+        m.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_aborts_socket_on_timeout() -> None:
+    """A timed-out request aborts the transport so local backends (LM Studio /
+    Ollama) see the disconnect and stop generating before a retry."""
+    from unittest import mock
+
+    import smoke_bench.clients.openai_compat as oc
+
+    client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
+    with respx.mock(base_url="https://api.example.com/v1") as respx_mock:
+        def _timeout(request):
+            raise httpx.ReadTimeout("timed out", request=request)
+
+        respx_mock.post("/chat/completions").mock(side_effect=_timeout)
+        with mock.patch.object(oc, "abort_client", new_callable=mock.AsyncMock) as m_abort:
+            with pytest.raises(httpx.ReadTimeout):
+                await client.chat(
+                    ChatRequest(
+                        model="gpt-4o",
+                        messages=[ChatMessage(role="user", content="hi")],
+                    )
+                )
+            m_abort.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_anthropic_chat_aborts_socket_on_timeout() -> None:
+    """Same guarantee for the Anthropic-compatible client."""
+    from unittest import mock
+
+    import smoke_bench.clients.anthropic_compat as ac
+
+    client = AnthropicCompatClient("https://api.anthropic.com/v1", "sk-ant")
+    with respx.mock(base_url="https://api.anthropic.com/v1") as respx_mock:
+        def _timeout(request):
+            raise httpx.ReadTimeout("timed out", request=request)
+
+        respx_mock.post("/messages").mock(side_effect=_timeout)
+        with mock.patch.object(ac, "abort_client", new_callable=mock.AsyncMock) as m_abort:
+            with pytest.raises(httpx.ReadTimeout):
+                await client.chat(
+                    ChatRequest(
+                        model="claude-3-5-sonnet",
+                        messages=[ChatMessage(role="user", content="hi")],
+                    )
+                )
+            m_abort.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_abort_active_aborts_registered_client() -> None:
+    """abort_active must abort the httpx client registered for the calling task
+    and leave no stale registration behind."""
+    from unittest import mock
+
+    import smoke_bench.clients.base as base
+
+    client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
+    task = asyncio.current_task()
+    fake_http = mock.AsyncMock()
+    client._active_http[task] = fake_http
+    with mock.patch.object(base, "abort_client", new_callable=mock.AsyncMock) as m_abort:
+        await client.abort_active()
+    m_abort.assert_awaited_once_with(fake_http)
+    assert client._active_http == {}
+
+
+@pytest.mark.asyncio
+async def test_abort_active_without_registration_is_noop() -> None:
+    """abort_active must not raise when no request is registered for the task."""
+    client = OpenAICompatClient("https://api.example.com/v1", "sk-test")
+    await client.abort_active()
+    assert client._active_http == {}

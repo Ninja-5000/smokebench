@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from collections.abc import AsyncIterator
@@ -9,6 +10,7 @@ from typing import Any
 
 import httpx
 
+from smoke_bench.clients._http import abort_client
 from smoke_bench.clients.base import (
     ChatChunk,
     ChatRequest,
@@ -93,10 +95,18 @@ class AnthropicCompatClient(LLMClient):
     async def chat(self, request: ChatRequest) -> ChatResponse:
         payload = self._payload(request)
         start = time.perf_counter()
-        async with self._client(timeout=max(60.0, request.max_tokens / 20.0)) as http:
+        http = self._client(timeout=max(60.0, request.max_tokens / 20.0))
+        self._active_http[asyncio.current_task()] = http
+        try:
             resp = await http.post("/messages", json=payload)
             resp.raise_for_status()
             data = resp.json()
+        except BaseException:  # noqa: BLE001 - abort the socket before retrying
+            await abort_client(http)
+            raise
+        finally:
+            self._active_http.pop(asyncio.current_task(), None)
+            await http.aclose()
         latency = time.perf_counter() - start
         text = _extract_text(data.get("content") or [])
         usage_data = data.get("usage") or {}
@@ -120,7 +130,9 @@ class AnthropicCompatClient(LLMClient):
         text_parts: list[str] = []
         usage = TokenUsage()
         finish_reason: str | None = None
-        async with self._client(timeout=max(60.0, request.max_tokens / 20.0)) as http:
+        http = self._client(timeout=max(60.0, request.max_tokens / 20.0))
+        self._active_http[asyncio.current_task()] = http
+        try:
             async with http.stream("POST", "/messages", json=payload) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
@@ -160,6 +172,12 @@ class AnthropicCompatClient(LLMClient):
                         finish_reason = evt.get("delta", {}).get("stop_reason") or finish_reason
                     elif etype == "message_stop":
                         break
+        except BaseException:  # noqa: BLE001 - abort the socket even if abandoned
+            await abort_client(http)
+            raise
+        finally:
+            self._active_http.pop(asyncio.current_task(), None)
+            await http.aclose()
         yield ChatChunk(delta="", ttft=False, usage=usage, finish_reason=finish_reason)
         del start, text_parts, first
 
